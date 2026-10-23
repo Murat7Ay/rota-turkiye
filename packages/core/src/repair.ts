@@ -14,7 +14,9 @@ export type RepairEvent =
   | { type: "late"; minutes: number }
   | { type: "rain"; fromMin: number; toMin: number }
   | { type: "overBudget"; overTry: number }
-  | { type: "missedMeal"; slot: Slot };
+  | { type: "missedMeal"; slot: Slot }
+  /** Kullanıcı bir durağı alternatifleriyle değiştirdi */
+  | { type: "swap"; stopId: string; placeId: string };
 
 export interface RepairState {
   /** Şu an, gün içi dakika (Türkiye saati) */
@@ -62,7 +64,7 @@ export function repairDay(
   const nowMin = state.nowMin;
   const name = (placeId: string) => ctx.index.get(placeId)?.name ?? placeId;
 
-  const eventStopId = event.type === "skip" || event.type === "closed" ? event.stopId : undefined;
+  const eventStopId = event.type === "skip" || event.type === "closed" || event.type === "swap" ? event.stopId : undefined;
   const eventStop = eventStopId ? day.stops.find((s) => s.id === eventStopId) : undefined;
   if (eventStopId && !eventStop) throw new Error(`repairDay: durak bulunamadı (${eventStopId})`);
   if (eventStop?.slot === "konaklama") throw new Error("repairDay: konaklama durağı atlanamaz");
@@ -79,7 +81,7 @@ export function repairDay(
     else if (s.arriveMin < nowMin) locked.push(s); // başlamış ya da geçmişte kalmış
     else pending.push(s);
   }
-  if (eventStop) {
+  if (eventStop && event.type !== "swap") {
     const { locked: _wasLocked, ...rest } = eventStop;
     history.push({ ...rest, status: event.type === "closed" ? "closed" : "skipped" });
   }
@@ -100,6 +102,7 @@ export function repairDay(
   const ban = new Set<string>();
   plan.days.forEach((d) => d.stops.forEach((s) => s.status === "closed" && ban.add(s.placeId)));
   for (const s of history) ban.add(s.placeId);
+  if (event.type === "swap") ban.add(eventStop!.placeId);
   const exclude = new Set<string>();
   plan.days.forEach((d, i) => {
     if (i !== dayIndex) for (const s of d.stops) if (s.slot !== "konaklama") exclude.add(s.placeId);
@@ -108,6 +111,11 @@ export function repairDay(
   const lodging = plan.days.reduce((sum, d) => sum + d.stops.filter((s) => s.slot === "konaklama").reduce((a, s) => a + s.estCost, 0), 0);
   const dailyBudgetTry = Math.max(0, toTry(req.budget, ctx.fx ?? DEFAULT_FX) - lodging) / Math.max(1, plan.days.length);
   const pendingIds = new Set(pending.map((s) => s.placeId));
+  const preferSlots = new Map(pending.map((s) => [s.placeId, s.slot]));
+  if (event.type === "swap") {
+    pendingIds.add(event.placeId);
+    preferSlots.set(event.placeId, eventStop!.slot);
+  }
 
   const base: DayInput = {
     index: day.index,
@@ -130,7 +138,7 @@ export function repairDay(
     banPlaceIds: ban,
     locked,
     preferPlaceIds: pendingIds,
-    preferSlots: new Map(pending.map((s) => [s.placeId, s.slot])),
+    preferSlots,
     route: day.route,
   };
 
@@ -169,6 +177,8 @@ export function repairDay(
         return `Bütçe aşımı: ${Math.round(event.overTry)} TL`;
       case "missedMeal":
         return `${SLOT_LABELS[event.slot]} kaçırıldı`;
+      case "swap":
+        return `${name(eventStop!.placeId)} yerine ${name(event.placeId)} seçildi`;
     }
   })();
   const originalRemaining = pending.length + (eventStop ? 1 : 0);
@@ -216,6 +226,20 @@ export function repairDay(
   const part = readyMin >= 17 * 60 ? "akşam" : readyMin >= 12 * 60 ? "öğleden sonra" : "gün";
 
   switch (event.type) {
+    case "swap": {
+      const x = name(eventStop!.placeId);
+      const y = name(event.placeId);
+      const d1 = solve({ onlyPlaceIds: pendingIds });
+      const ok = newPlanned(d1).some((s) => s.placeId === event.placeId);
+      add(
+        "takas",
+        d1,
+        ok ? `${x} yerine ${y}` : `${y} bugüne sığmıyor`,
+        ok ? `${y} eklendi; diğer duraklar korunup saatleri kaydırıldı.` : `${y} çalışma saatleri ya da yol süresi nedeniyle bugüne sığmadı; kalan plan korunuyor.`,
+      );
+      add("yeniden", solve({}), "Kalan günü buna göre düzenle", `${y} öncelikli; kalan gün şu anki konumdan yeniden planlandı.`);
+      break;
+    }
     case "skip":
     case "closed": {
       const stop = eventStop!;

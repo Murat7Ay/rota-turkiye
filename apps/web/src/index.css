@@ -1,0 +1,392 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------ tasarım belirteçleri
+   Sıcak bir Türkiye paleti: kiremit (terracotta), turkuaz, krem. Anlamsal renkler
+   CSS değişkeni olarak tanımlanır; açık/koyu tema prefers-color-scheme ile değişir. */
+:root {
+  --bg: #fbf7f1;
+  --surface: #ffffff;
+  --surface-2: #f5efe6;
+  --surface-3: #ede5d8;
+  --ink: #1c1917;
+  --ink-2: #44403c;
+  --muted: #78716c;
+  --line: #e9e1d5;
+  --brand: #c2410c;
+  --brand-strong: #9a3412;
+  --brand-soft: #fff1e8;
+  --brand-ink: #ffffff;
+  --sea: #0e7490;
+  --sea-soft: #e3f6f9;
+  --good: #0f766e;
+  --good-soft: #e1f5f1;
+  --warn: #b45309;
+  --warn-soft: #fef3e2;
+  --bad: #b91c1c;
+  --bad-soft: #fde8e8;
+  --shadow: 28 25 23;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12100e;
+    --surface: #1c1917;
+    --surface-2: #24201d;
+    --surface-3: #2e2925;
+    --ink: #f5f0ea;
+    --ink-2: #d6cfc6;
+    --muted: #a59d94;
+    --line: #342f2a;
+    --brand: #ea6a2a;
+    --brand-strong: #f08a4b;
+    --brand-soft: #3a2116;
+    --brand-ink: #1c1917;
+    --sea: #22b8cf;
+    --sea-soft: #10303a;
+    --good: #2dd4bf;
+    --good-soft: #0f2e2a;
+    --warn: #f59e0b;
+    --warn-soft: #3a2a10;
+    --bad: #f87171;
+    --bad-soft: #3b1717;
+    --shadow: 0 0 0;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-sea: var(--sea);
+  --color-sea-soft: var(--sea-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+}
+
+@theme {
+  --font-sans: "Inter", "InterVariable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+  --shadow-card: 0 1px 2px rgb(var(--shadow) / 0.05), 0 4px 16px -6px rgb(var(--shadow) / 0.12);
+  --shadow-lift: 0 2px 6px rgb(var(--shadow) / 0.08), 0 18px 40px -16px rgb(var(--shadow) / 0.28);
+  --animate-pop: pop 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  --animate-slide-up: slide-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-fade: fade 0.2s ease-out;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------------------ temel */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+html,
+body,
+#root {
+  min-height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+button,
+[role="button"] {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+input[type="date"],
+input[type="time"] {
+  min-height: 44px;
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Aralık kaydırıcısı */
+input[type="range"].range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+}
+input[type="range"].range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand) var(--fill, 50%), var(--surface-3) var(--fill, 50%));
+}
+input[type="range"].range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+input[type="range"].range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--brand);
+}
+input[type="range"].range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--brand);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+}
+input[type="range"].range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--brand);
+}
+
+/* ------------------------------------------------------------ harita işaretleri */
+.maplibregl-map {
+  font-family: var(--font-sans);
+}
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+.rota-pin {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  background: var(--surface);
+  border: 2.5px solid var(--pin, var(--brand));
+  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.35);
+  transition: transform 0.2s;
+}
+.rota-pin > span {
+  transform: rotate(45deg);
+  font-size: 18px;
+  line-height: 1;
+}
+.rota-pin[data-active="true"] {
+  transform: rotate(-45deg) scale(1.18);
+  z-index: 3;
+}
+.rota-pin .rota-pin-num {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  transform: rotate(45deg);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pin, var(--brand));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.rota-pin[data-status="done"] {
+  opacity: 0.55;
+}
+.rota-pin[data-status="skipped"],
+.rota-pin[data-status="closed"] {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.rota-pin-ghost {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 2px dashed var(--sea);
+  font-size: 16px;
+  box-shadow: 0 4px 10px -4px rgb(0 0 0 / 0.3);
+}
+.rota-hotel {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #1c1917;
+  color: #fff;
+  font-size: 17px;
+  border: 2px solid #fff;
+  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.4);
+}
+
+/* "Sen buradasın" nabız noktası */
+.you-dot {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+.you-dot::before,
+.you-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+.you-dot::after {
+  background: #0e7490;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+}
+.you-dot::before {
+  background: rgb(14 116 144 / 0.45);
+  animation: you-pulse 2s ease-out infinite;
+}
+.you-dot .you-heading {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 12px solid #0e7490;
+  transform-origin: 50% 22px;
+  transform: translate(-50%, -24px) rotate(var(--heading, 0deg));
+}
+@keyframes you-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(3.6);
+    opacity: 0;
+  }
+}
+
+/* Etrafım POI iğnesi */
+.poi-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transform-origin: bottom center;
+  transition: transform 0.25s;
+}
+.poi-pin .poi-bubble {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 18px;
+  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.45), 0 0 0 2px var(--pin, #c2410c);
+}
+.poi-pin .poi-stem {
+  width: 2px;
+  height: 14px;
+  background: linear-gradient(var(--pin, #c2410c), transparent);
+}
+.poi-pin[data-active="true"] {
+  transform: scale(1.25) translateY(-4px);
+  z-index: 5;
+}
+.poi-pin[data-closed="true"] .poi-bubble {
+  filter: grayscale(0.8);
+  opacity: 0.8;
+}
+
+/* Diorama */
+.diorama-rim {
+  background: conic-gradient(from 210deg, #fdba74, #c2410c, #0e7490, #67e8f9, #fdba74);
+}
+.diorama-sky {
+  background: radial-gradient(120% 90% at 50% 0%, #fef3c7 0%, #bae6fd 45%, #7dd3fc 100%);
+}
+@media (prefers-color-scheme: dark) {
+  .diorama-sky {
+    background: radial-gradient(120% 90% at 50% 0%, #312e81 0%, #1e3a8a 45%, #0f172a 100%);
+  }
+}
+.diorama-shadow {
+  background: radial-gradient(closest-side, rgb(var(--shadow) / 0.35), transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .you-dot::before {
+    animation: none;
+  }
+}

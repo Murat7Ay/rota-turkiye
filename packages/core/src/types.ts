@@ -255,6 +255,8 @@ export interface TripPlan {
   /** TRY */
   estTotal: number;
   version: number;
+  /** Planın üretildiği tohum; paylaşım linki aynı planı yeniden kurmak için kullanır */
+  seed?: number;
 }
 
 // ---------------------------------------------------------------- bütçe

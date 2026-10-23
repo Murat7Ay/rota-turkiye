@@ -151,6 +151,7 @@ export function planTrip(req: TripRequest, pack: RegionPack, ctx: PlanContext, o
     days: planned,
     estTotal: Math.round(planned.reduce((sum, d) => sum + d.estCost, 0)),
     version: 1,
+    seed: ctx.seed ?? 1,
   };
 }
 
