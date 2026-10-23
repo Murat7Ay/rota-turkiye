@@ -19,6 +19,7 @@ import {
   buildGuideContext,
   formatHHmm,
   goldenHourSpot,
+  localTipsForDay,
   nowInputFromTrip,
   sunTimes,
   toTrWallClock,
@@ -37,6 +38,7 @@ import { Sheet } from "../components/Sheet";
 import { Badge, Button, Card, EmptyState, PageHeader, SectionTitle, Spinner, cx } from "../components/ui";
 import { makeSamplePlan } from "../dev/sample";
 import { GuideChat, NarrationButton } from "../features/ai";
+import { LocalTipsCard, WarningsBanner } from "../features/knowledge";
 import { NowButton } from "../features/now/NowButton";
 import { GoldenHourCard } from "../features/sun/GoldenHourCard";
 import { briefingToSpeech } from "../features/voice/speak";
@@ -122,6 +124,16 @@ export default function Today() {
       return null;
     }
   }, [plan, day, index, position, weather]);
+
+  // Yerel rehber ipuçları: yolda geçilen ilin coğrafi işaretli tatları, bölge uyarıları, görgü kuralları
+  const tips = useMemo(() => {
+    if (!day || !index) return [];
+    try {
+      return localTipsForDay(day, index);
+    } catch {
+      return [];
+    }
+  }, [day, index]);
 
   // "Rehbere sor" için kompakt bağlam
   const guideContext = useMemo(() => {
@@ -325,6 +337,8 @@ export default function Today() {
           </section>
         )}
         {brief && <NarrationButton briefing={brief} />}
+        {tips.length > 0 && <LocalTipsCard tips={tips} />}
+        <WarningsBanner loc={position?.loc ?? day.to.loc} />
 
         {golden && (golden.spot || golden.sun) && (
           <GoldenHourCard

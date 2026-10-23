@@ -21,3 +21,4 @@ export * from "./wrapped";
 export * from "./provinces";
 export * from "./now";
 export * from "./sun";
+export * from "./knowledge";

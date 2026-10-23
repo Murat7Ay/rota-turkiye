@@ -15,6 +15,7 @@ import { usePack } from "../state/pack";
 import { useSettings } from "../state/settings";
 import { useTrip } from "../state/trip";
 import { toast, useUi } from "../state/ui";
+import { TastesPanel, WarningsBanner } from "../features/knowledge";
 
 const Diorama = lazy(() => import("../map/Diorama"));
 
@@ -215,6 +216,9 @@ export default function Around() {
           </Card>
 
           {(mode === "konum" || mode === "sim") && <LiveControls dayIndex={sim?.dayIndex ?? selectedDay} />}
+
+          <WarningsBanner loc={center} date={new Date()} />
+          <TastesPanel loc={center} radiusKm={25} />
         </div>
 
         <section aria-label="Yakındaki öne çıkan yerler" className="space-y-3">
