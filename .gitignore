@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.log
+.env
+.env.*
+!.env.example
+packages/data/.cache/
+infra/osrm/data/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,15 @@
+# Kendi OSRM sunucun (isteğe bağlı). Uygulama varsayılan olarak herkese açık demo sunucusunu
+# kullanır; o sunucu yalnızca hafif kullanım içindir. Önce verini hazırla:
+#   bash infra/osrm/prepare.sh            # tüm Türkiye (~621 MB indirir, ~8 GB RAM ister)
+#   BBOX=26.2,37.3,29.35,38.8 bash infra/osrm/prepare.sh   # yalnızca Ege (çok daha hafif)
+# Sonra:  docker compose -f infra/osrm/docker-compose.yml up -d
+# Uygulamada Ayarlar → OSRM adresi: http://localhost:5000
+services:
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:v5.27.1
+    command: osrm-routed --algorithm mld --max-table-size 400 /data/region.osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
