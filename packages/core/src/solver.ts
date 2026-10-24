@@ -293,6 +293,9 @@ function scoreInternal(
     notes.push([0.25, "Manzaralı"]);
   }
 
+  // Türkiye rehberi: öğünlerde yerel mutfak önde; yabancı mutfak ancak başka seçenek yoksa
+  if (tags.has("yabanci_mutfak")) u -= 0.6;
+
   // Yerel işletme eğilimi
   if (place.cat === "esnaf_lokantasi") {
     u += 0.25;

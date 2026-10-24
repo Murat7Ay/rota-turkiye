@@ -85,7 +85,9 @@ export type PlaceTag =
   | "muzekart"
   | "aile"
   | "erisilebilir"
-  | "wikidata";
+  | "wikidata"
+  /** Türk mutfağı dışı (Çin, suşi, pizza, steakhouse…): rehber öğünlerde yerel mutfağı öne çıkarır */
+  | "yabanci_mutfak";
 
 export interface PriceObservation {
   amount: number;

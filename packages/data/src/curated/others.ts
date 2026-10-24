@@ -12,6 +12,8 @@ export const KAPADOKYA_OVERLAY: RegionOverlay = {
       tags: ["unesco", "muzekart", "tarihi"],
       minNotability: 1,
       visitMin: 120,
+      // İçindeki Elmalı, Karanlık, Yılanlı kiliseleri… ve hemen aşağıdaki Tokalı Kilise aynı ziyaret
+      siteKm: 0.45,
     },
     {
       id: "zelve",
@@ -21,19 +23,56 @@ export const KAPADOKYA_OVERLAY: RegionOverlay = {
       near: { lat: 38.673, lon: 34.865, km: 1.5 },
       tags: ["muzekart", "tarihi"],
       minNotability: 0.8,
+      visitMin: 90,
+      siteKm: 0.6,
     },
     {
       id: "kaymakli",
       match: /kaymakli.*(yeralti|underground)/,
       cats: ["muze", "antik_kent", "tarihi_yapi"],
       near: { lat: 38.4612, lon: 34.7514, km: 1.5 },
+      setCat: "muze",
       tags: ["muzekart", "tarihi"],
       minNotability: 0.85,
+      visitMin: 60,
+      siteKm: 0.3,
+    },
+    {
+      id: "derinkuyu",
+      match: /derinkuyu.*(yeralti|underground)/,
+      cats: ["muze", "antik_kent", "tarihi_yapi"],
+      near: { lat: 38.3737, lon: 34.7347, km: 1.5 },
+      setCat: "muze",
+      tags: ["muzekart", "tarihi"],
+      minNotability: 0.85,
+      visitMin: 60,
+      siteKm: 0.3,
+    },
+    {
+      id: "uchisar-kalesi",
+      match: /uchisar kale/,
+      notMatch: /otel|hotel|pansiyon|suites|cafe|restoran/,
+      cats: ["muze", "tarihi_yapi", "manzara"],
+      near: { lat: 38.6306, lon: 34.8044, km: 0.6 },
+      setCat: "tarihi_yapi",
+      tags: ["manzara", "tarihi"],
+      minNotability: 0.9,
+      visitMin: 45,
+      siteKm: 0.15,
     },
   ],
   // Ürgüp – Uçhisar – Ortahisar bağları
   wineAreas: [{ lat: 38.63, lon: 34.87, km: 10 }],
-  keepTowns: ["goreme", "uchisar", "ortahisar", "cavusin", "mustafapasa", "ibrahimpasa", "ayvali", "kaymakli", "derinkuyu"],
+  keepTowns: ["goreme", "uchisar", "ortahisar", "cavusin", "mustafapasa", "ibrahimpasa", "ayvali", "kaymakli", "derinkuyu", "ihlara", "belisirma", "selime", "soganli"],
+  // Yerleşim sorgusu eksik kalırsa merkezler (~500 m); OSM'de aynı adlı kayıt varsa o kullanılır
+  fallbackTowns: [
+    { name: "Nevşehir", loc: { lat: 38.6247, lon: 34.7142 }, kind: "city" },
+    { name: "Göreme", loc: { lat: 38.6431, lon: 34.8289 }, kind: "town" },
+    { name: "Ürgüp", loc: { lat: 38.633, lon: 34.912 }, kind: "town" },
+    { name: "Avanos", loc: { lat: 38.715, lon: 34.847 }, kind: "town" },
+    { name: "Uçhisar", loc: { lat: 38.63, lon: 34.805 }, kind: "town" },
+    { name: "Derinkuyu", loc: { lat: 38.374, lon: 34.735 }, kind: "town" },
+  ],
 };
 
 // UNESCO: İstanbul'un Tarihi Alanları (1985)
@@ -112,5 +151,16 @@ export const ISTANBUL_OVERLAY: RegionOverlay = {
     "moda",
     "uskudar",
     "kuzguncuk",
+  ],
+  // OSM'de bu semtler çoğu zaman place=quarter/neighbourhood (sorgulanmıyor); meydan merkezleri (~300 m)
+  fallbackTowns: [
+    { name: "Sultanahmet", loc: { lat: 41.0058, lon: 28.9768 }, kind: "town" },
+    { name: "Eminönü", loc: { lat: 41.017, lon: 28.97 }, kind: "town" },
+    { name: "Karaköy", loc: { lat: 41.0225, lon: 28.977 }, kind: "town" },
+    { name: "Beyoğlu", loc: { lat: 41.0369, lon: 28.985 }, kind: "town" },
+    { name: "Balat", loc: { lat: 41.029, lon: 28.949 }, kind: "town" },
+    { name: "Kadıköy", loc: { lat: 40.9905, lon: 29.0255 }, kind: "town" },
+    { name: "Üsküdar", loc: { lat: 41.0256, lon: 29.0151 }, kind: "town" },
+    { name: "Beşiktaş", loc: { lat: 41.0428, lon: 29.007 }, kind: "town" },
   ],
 };

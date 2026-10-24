@@ -44,6 +44,8 @@ export const RX = {
   han: /\bhani?\b/,
   antikKent: /antik kent|ancient city|oren yeri|\bharabe|antik tiyatro|tapinag|\btemple\b/,
   antikKentAd: /antik kent|ancient city|oren yeri|arkeolojik alan/,
+  yabanciMutfak: /^(chinese|japanese|sushi|korean|thai|vietnamese|asian|indian|italian|pizza|burger|american|mexican|tex-mex|steak_house|french|spanish|sandwich|chicken|fried_chicken|hot_dog|noodle|ramen)$/,
+  yabanciMutfakAd: /\b(chinese|china|sushi|wok|noodle|ramen|pizza|pizzeria|burger|steak ?house|steakhouse|tacos?|mexican|italian|trattoria|bbq|barbeque|barbecue)\b/,
   kalintiParca: /hamam|tiyatro|agora|sarnic|nekropol|kilise|bazilika|basilica|odeon|stadyum|stadium|gymnas|cesme|kapisi|sutun|mozaik|tapinag|temple|kutuphane|library|\bbath/,
   /** OSM'de gezi etiketiyle işaretlenmiş ama açıkça işletme olan adlar (ör. "tourism=viewpoint" bir kargo şubesi) */
   isletmeAdi: /\b(kargo|market|marketi|eczane|eczanesi|ltd|sti|otopark|benzin|petrol|bankasi|atm|emlak|sigorta|noter|kuafor)\b/,
@@ -416,6 +418,11 @@ export function categorize(e: OsmElement, overlay: RegionOverlay = EMPTY_OVERLAY
   if (d.cat === "manzara" || (FOOD_CATS.has(d.cat) && RX.manzara.test(f))) tags.add("manzara");
   if (RX.aile.test(f)) tags.add("aile");
   if (t.wheelchair === "yes") tags.add("erisilebilir");
+  const foreign = FOOD_CATS.has(d.cat) && (RX.yabanciMutfakAd.test(f) || (cs.length > 0 && cs.every((c) => RX.yabanciMutfak.test(c))));
+  if (foreign) {
+    tags.add("yabanci_mutfak");
+    tags.delete("yerel");
+  }
 
   // --- önem
   let n = 0.1;

@@ -10,7 +10,21 @@
     ],
     "places": 4358,
     "towns": 84,
-    "generatedAt": "2026-10-24T01:12:47.180Z",
-    "bytes": 957098
+    "generatedAt": "2026-10-24T04:53:52.481Z",
+    "bytes": 958648
+  },
+  {
+    "id": "kapadokya",
+    "name": "Kapadokya: Göreme – Ürgüp – Ihlara",
+    "bbox": [
+      34.25,
+      38.2,
+      35.15,
+      38.85
+    ],
+    "places": 909,
+    "towns": 22,
+    "generatedAt": "2026-10-24T04:53:43.124Z",
+    "bytes": 198876
   }
 ]

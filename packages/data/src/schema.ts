@@ -18,6 +18,7 @@ const TAGS = [
   "aile",
   "erisilebilir",
   "wikidata",
+  "yabanci_mutfak",
 ] as const satisfies readonly PlaceTag[];
 
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
