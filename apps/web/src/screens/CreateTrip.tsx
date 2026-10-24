@@ -26,6 +26,13 @@ import { useSettings } from "../state/settings";
 import { draftToRequest, todayTr, useTrip } from "../state/trip";
 import { toast } from "../state/ui";
 
+/** Bölgelerin klasik rotaları: paket bu yerleşimleri içeriyorsa "hızlı doldur" düğmesi çıkar */
+const QUICK_ROUTES: Array<{ label: string; stays: Array<[string, number]> }> = [
+  { label: "İzmir → Efes → Pamukkale", stays: [["İzmir", 1], ["Selçuk", 1], ["Pamukkale", 1]] },
+  { label: "Göreme + Ürgüp", stays: [["Göreme", 2], ["Ürgüp", 1]] },
+  { label: "Sultanahmet + Kadıköy", stays: [["Sultanahmet", 2], ["Kadıköy", 1]] },
+];
+
 export const INTERESTS: Array<{ id: Interest; label: string; emoji: string }> = [
   { id: "tarih", label: "Tarih", emoji: "🏛️" },
   { id: "yemek", label: "Yemek", emoji: "🍲" },
@@ -152,24 +159,24 @@ export default function CreateTrip() {
     setDraft({ stays: s });
   }
 
-  /** Paket bu yerleri içeriyorsa örnek Ege rotasını doldurur */
+  /** Paket bu yerleri içeriyorsa bölgenin klasik rotasını tek dokunuşla doldurur */
   const quick = useMemo(() => {
     const find = (n: string) => towns.find((t) => normTr(t.name) === normTr(n));
-    const izmir = find("İzmir");
-    const selcuk = find("Selçuk");
-    const pamukkale = find("Pamukkale") ?? find("Denizli");
-    return izmir && selcuk && pamukkale ? { izmir, selcuk, pamukkale } : null;
+    for (const route of QUICK_ROUTES) {
+      const stays = route.stays.map(([n, nights]) => ({ town: find(n), nights }));
+      if (stays.every((s) => s.town)) {
+        return { label: route.label, stays: stays.map((s) => ({ town: s.town!, nights: s.nights })) };
+      }
+    }
+    return null;
   }, [towns]);
 
   function fillQuick() {
     if (!quick) return;
+    const first = quick.stays[0]!.town;
     setDraft({
-      start: { id: quick.izmir.id, name: quick.izmir.name, loc: quick.izmir.loc },
-      stays: [
-        { id: quick.izmir.id, name: quick.izmir.name, loc: quick.izmir.loc, nights: 1 },
-        { id: quick.selcuk.id, name: quick.selcuk.name, loc: quick.selcuk.loc, nights: 1 },
-        { id: quick.pamukkale.id, name: quick.pamukkale.name, loc: quick.pamukkale.loc, nights: 1 },
-      ],
+      start: { id: first.id, name: first.name, loc: first.loc },
+      stays: quick.stays.map(({ town: t, nights }) => ({ id: t.id, name: t.name, loc: t.loc, nights })),
     });
   }
 
@@ -304,7 +311,7 @@ export default function CreateTrip() {
             action={
               quick && (
                 <Button size="sm" variant="ghost" icon={<WandSparkles className="size-4" />} onClick={fillQuick}>
-                  İzmir → Efes → Pamukkale
+                  {quick.label}
                 </Button>
               )
             }

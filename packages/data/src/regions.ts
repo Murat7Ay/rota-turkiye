@@ -10,7 +10,8 @@ export interface RegionDef {
 
 export const REGIONS: Record<string, RegionDef> = {
   ege: { id: "ege", name: "Ege: İzmir – Efes – Pamukkale", bbox: [26.2, 37.3, 29.35, 38.8] },
-  kapadokya: { id: "kapadokya", name: "Kapadokya", bbox: [34.6, 38.45, 35.1, 38.8] },
+  // Göreme–Ürgüp–Avanos çekirdeği + Kaymaklı/Derinkuyu yeraltı şehirleri, Ihlara Vadisi ve Soğanlı
+  kapadokya: { id: "kapadokya", name: "Kapadokya: Göreme – Ürgüp – Ihlara", bbox: [34.25, 38.2, 35.15, 38.85] },
   "istanbul-tarihi": {
     id: "istanbul-tarihi",
     name: "İstanbul: Tarihi Yarımada – Beyoğlu – Kadıköy – Üsküdar",
