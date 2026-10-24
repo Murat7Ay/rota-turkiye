@@ -26,5 +26,19 @@
     "towns": 22,
     "generatedAt": "2026-10-24T04:53:43.124Z",
     "bytes": 198876
+  },
+  {
+    "id": "istanbul-tarihi",
+    "name": "İstanbul: Tarihi Yarımada – Beyoğlu – Kadıköy – Üsküdar",
+    "bbox": [
+      28.92,
+      40.98,
+      29.06,
+      41.05
+    ],
+    "places": 6532,
+    "towns": 15,
+    "generatedAt": "2026-10-24T05:02:55.104Z",
+    "bytes": 1512720
   }
 ]

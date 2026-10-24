@@ -63,6 +63,7 @@ pnpm install
 pnpm dev                 # http://localhost:5173
 pnpm test                # bütün paketlerin birim testleri
 pnpm smoke               # gerçek Ege paketiyle uçtan uca planlama denemesi
+pnpm --filter @rota/data smoke kapadokya          # ya da istanbul-tarihi
 pnpm data:ege            # Ege paketini OSM'den yeniden üret
 ```
 
@@ -78,7 +79,7 @@ Kendi rota sunucun için `infra/osrm/docker-compose.yml` dosyasındaki adımlara
 
 ## Bilinen sınırlar
 
-- Pilot bölge Ege (İzmir – Efes – Pamukkale). Kapadokya ve İstanbul için kürasyon hazır, paketleri henüz üretilmedi.
+- Üç bölge var: **Ege** (İzmir – Efes – Pamukkale, 4.358 yer), **Kapadokya** (Göreme – Ürgüp – Ihlara, 909 yer), **İstanbul** (Tarihi Yarımada – Beyoğlu – Kadıköy – Üsküdar, 6.532 yer). Yeni bölge: `packages/data/src/regions.ts` + kürasyon katmanı + `pnpm --filter @rota/data build-pack <bölge>`.
 - OSM'de çalışma saati olan mekân oranı düşük; uygulama bunu "çalışma saati doğrulanmadı" diye açıkça söyler.
 - Fiyatların çoğu kategori modeli tahminidir ve "tahmini" etiketiyle gösterilir; gerçek fişler geldikçe iyileşir.
 - Arka planda konum bildirimi tarayıcıda yalnızca uygulama açıkken çalışır; kalıcı arka plan için yerel paketleme (Capacitor) sonraki adım.

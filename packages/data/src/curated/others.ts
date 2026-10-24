@@ -86,6 +86,9 @@ export const ISTANBUL_OVERLAY: RegionOverlay = {
       near: { lat: 41.0086, lon: 28.9802, km: 0.4 },
       tags: ["unesco", "tarihi"],
       minNotability: 1,
+      visitMin: 60,
+      // OSM'de hem "Ayasofya" hem "Ayasofya-i Kebir Câmi-i Şerifi" var: tek durak olsun
+      siteKm: 0.1,
     },
     {
       id: "sultanahmet-camii",
@@ -122,6 +125,9 @@ export const ISTANBUL_OVERLAY: RegionOverlay = {
       near: { lat: 41.0117, lon: 28.9813, km: 0.4 },
       tags: ["muzekart"],
       minNotability: 0.85,
+      visitMin: 90,
+      // "Müzeleri" ve "Müzesi" iki ayrı kayıt: aynı kompleks
+      siteKm: 0.1,
     },
     {
       id: "turk-islam-eserleri",
