@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ege",
+    "name": "Ege: İzmir – Efes – Pamukkale",
+    "bbox": [
+      26.2,
+      37.3,
+      29.35,
+      38.8
+    ],
+    "places": 4358,
+    "towns": 84,
+    "generatedAt": "2026-10-24T01:12:47.180Z",
+    "bytes": 957098
+  }
+]

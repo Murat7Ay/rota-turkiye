@@ -11,7 +11,8 @@
     "build": "pnpm --filter @rota/web build",
     "test": "pnpm -r --workspace-concurrency=1 test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck",
-    "data:ege": "pnpm --filter @rota/data build-pack ege"
+    "data:ege": "pnpm --filter @rota/data build-pack ege",
+    "smoke": "pnpm --filter @rota/data smoke ege"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

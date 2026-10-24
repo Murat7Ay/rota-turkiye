@@ -133,7 +133,8 @@ export default function PlanScreen() {
         </div>
 
         {/* liste */}
-        <div ref={listRef} className="order-2 grid content-start gap-4 px-4 sm:px-6 lg:order-1 lg:px-0">
+        {/* grid-cols-[minmax(0,1fr)]: yatay kaydırmalı "Yol üstünde" şeridi sütunu genişletmesin */}
+        <div ref={listRef} className="order-2 grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 px-4 sm:px-6 lg:order-1 lg:px-0">
           <Card className="p-4">
             <div className="flex items-start gap-3">
               <span className="mt-1 size-3 shrink-0 rounded-full" style={{ background: color }} aria-hidden />

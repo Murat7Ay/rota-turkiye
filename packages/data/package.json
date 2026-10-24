@@ -1,0 +1,17 @@
+{
+  "name": "@rota/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build-pack": "tsx src/build-pack.ts",
+    "smoke": "tsx src/smoke-plan.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@rota/core": "workspace:*",
+    "opening_hours": "^3.15.0",
+    "zod": "^4.6.7"
+  }
+}

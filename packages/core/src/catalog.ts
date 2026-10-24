@@ -34,7 +34,7 @@ export const CATEGORIES: Record<PlaceCategory, CategoryInfo> = {
   kafe: { label: "Kafe", group: "yeme", slots: ["cay"], visitMin: 40, defaultHours: "Mo-Su 08:00-23:00", indoor: true, interests: [], emoji: "☕" },
   cay_bahcesi: { label: "Çay bahçesi", group: "yeme", slots: ["cay"], visitMin: 40, defaultHours: "Mo-Su 08:00-23:00", indoor: false, interests: ["kultur"], emoji: "🫖" },
   kahvehane: { label: "Kahvehane", group: "yeme", slots: ["cay"], visitMin: 30, defaultHours: "Mo-Su 07:00-23:00", indoor: true, interests: ["kultur"], emoji: "🫖" },
-  tatlici: { label: "Tatlıcı", group: "yeme", slots: ["tatli", "cay"], visitMin: 30, defaultHours: "Mo-Su 09:00-23:00", indoor: true, interests: ["tatli", "yemek"], emoji: "🍯" },
+  tatlici: { label: "Tatlıcı", group: "yeme", slots: ["tatli"], visitMin: 30, defaultHours: "Mo-Su 09:00-23:00", indoor: true, interests: ["tatli", "yemek"], emoji: "🍯" },
   firin: { label: "Fırın", group: "yeme", slots: ["kahvalti", "tatli"], visitMin: 15, defaultHours: "Mo-Su 07:00-21:00", indoor: true, interests: ["yemek"], emoji: "🥨" },
 
   carsi: { label: "Tarihi çarşı", group: "alisveris", slots: ["alisveris", "gezi"], visitMin: 60, defaultHours: "Mo-Sa 09:00-19:00", indoor: false, interests: ["alisveris", "kultur", "tarih"], emoji: "🛍️" },

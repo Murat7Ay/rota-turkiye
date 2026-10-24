@@ -19,6 +19,7 @@ import {
   buildGuideContext,
   formatHHmm,
   goldenHourSpot,
+  isWalkLeg,
   localTipsForDay,
   nowInputFromTrip,
   sunTimes,
@@ -321,7 +322,7 @@ export default function Today() {
               </div>
               {brief.planB && (
                 <p className="mt-3 rounded-2xl bg-white/10 p-3 text-sm">
-                  <b>B planı:</b> {brief.planB}
+                  <b>B planı:</b> {brief.planB.replace(/^B planı:\s*/, "")}
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-2">
@@ -398,7 +399,7 @@ export default function Today() {
                   {s.travelMin > 0 && (
                     <div className="flex items-center gap-2 py-1.5 text-xs text-muted">
                       <span className="tabular">
-                        {plan.request.transport === "yuruyus" ? "🚶" : plan.request.transport === "toplu" ? "🚌" : "🚗"} {fmtDuration(s.travelMin)} · {fmtKm(s.travelKm)}
+                        {isWalkLeg(s.travelKm, plan.request.transport) ? "🚶" : plan.request.transport === "toplu" ? "🚌" : "🚗"} {fmtDuration(s.travelMin)} · {fmtKm(s.travelKm)}
                       </span>
                     </div>
                   )}

@@ -8,6 +8,8 @@ const base = process.env.BASE_PATH ?? "/";
 
 export default defineConfig({
   base,
+  // Planlama işçisi @rota/core'u ES modülü olarak içe aktarır
+  worker: { format: "es" },
   plugins: [
     react(),
     tailwindcss(),

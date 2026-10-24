@@ -221,8 +221,10 @@ interface Corridor {
 }
 
 function corridorOf(proj: LineProjection, routeKm: number, bufferKm: number): Corridor {
-  const onRoute =
-    routeKm > 15 && proj.distanceKm <= bufferKm && proj.alongKm >= routeKm * 0.08 && proj.alongKm <= routeKm * 0.92;
+  // Kalkış şehrinin içi "yol üstü" sayılmaz (İzmir gibi büyük şehirler rotanın ilk ~15 km'si)
+  const head = Math.max(routeKm * 0.08, 15);
+  const tail = Math.max(routeKm * 0.08, 5);
+  const onRoute = routeKm > 30 && proj.distanceKm <= bufferKm && proj.alongKm >= head && proj.alongKm <= routeKm - tail;
   return { offKm: proj.distanceKm, alongKm: proj.alongKm, routeKm, onRoute };
 }
 
@@ -261,6 +263,11 @@ function scoreInternal(
   if (tags.has("unesco")) {
     u += 0.6;
     notes.push([1, "UNESCO Dünya Mirası"]);
+  }
+  // Bölgenin "mutlaka görülmeli" yerleri (Efes, Hierapolis…): uzun ziyaret kısa duraklara kaybetmesin
+  if (info.group === "gezi" && place.notability >= 0.9) {
+    u += 1 + Math.min(3, place.visitMin / 60);
+    notes.push([0.98, "Bölgenin mutlaka görülmesi gereken yeri"]);
   }
   if (tags.has("michelin")) {
     u += 0.6;

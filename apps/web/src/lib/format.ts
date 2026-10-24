@@ -60,9 +60,12 @@ export function fmtDateShort(date: string): string {
   return `${d} ${MONTHS_SHORT[m - 1]}`;
 }
 
+// İlk üç harf yetmez: Cuma/Cumartesi ve Pazar/Pazartesi çakışır
+const WEEKDAY_SHORT = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"] as const;
+
 /** "Cmt" */
 export function fmtWeekdayShort(date: string): string {
-  return (WEEKDAY_TR[weekday(date)] ?? "").slice(0, 3);
+  return WEEKDAY_SHORT[weekday(date)] ?? "";
 }
 
 export function fmtBytes(bytes: number): string {

@@ -65,7 +65,8 @@ function skeleton(req: TripRequest, ctx: PlanContext): DaySkeleton[] {
   for (const stay of req.stays) {
     if (stay.nights <= 0) continue;
     const hotel = chooseHotel(stay, req, ctx);
-    const to: NamedPoint = hotel ? { name: hotel.name, loc: hotel.loc } : { name: stay.name, loc: stay.loc };
+    // Ad her zaman üssün (şehir/kasaba) adı: başlıklar "Selçuk → Pamukkale" okunsun; otel ayrıca hotelPlaceId'de
+    const to: NamedPoint = hotel ? { name: stay.name, loc: hotel.loc } : { name: stay.name, loc: stay.loc };
     for (let n = 0; n < stay.nights; n++) {
       const index = out.length;
       out.push({

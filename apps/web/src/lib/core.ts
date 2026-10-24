@@ -32,6 +32,7 @@ import type {
   WeatherDay,
 } from "@rota/core";
 import * as fb from "../dev/fallbacks";
+import type { PlannerRequest, PlannerResponse } from "./planner.worker";
 import { toast } from "../state/ui";
 
 const reported = new Set<string>();
@@ -88,10 +89,60 @@ export function planContext(index: PlaceIndex, mode: TransportMode, seed?: numbe
 
 // ---------------------------------------------------------------- planlama
 
+// ---- planlama işçisi (Web Worker): uzun hesap ana iş parçacığını dondurmasın
+let worker: Worker | null = null;
+let workerPackKey: string | null = null;
+let seq = 0;
+const waiting = new Map<number, (r: PlannerResponse) => void>();
+
+function getWorker(): Worker | null {
+  if (worker || typeof Worker === "undefined") return worker;
+  try {
+    worker = new Worker(new URL("./planner.worker.ts", import.meta.url), { type: "module" });
+    worker.onmessage = (e: MessageEvent<PlannerResponse>) => {
+      waiting.get(e.data.id)?.(e.data);
+      waiting.delete(e.data.id);
+    };
+    worker.onerror = () => {
+      worker = null;
+      workerPackKey = null;
+    };
+  } catch {
+    worker = null;
+  }
+  return worker;
+}
+
+function askWorker(w: Worker, msg: Omit<PlannerRequest, "id">): Promise<PlannerResponse> {
+  const id = ++seq;
+  return new Promise((resolve) => {
+    waiting.set(id, resolve);
+    w.postMessage({ ...msg, id });
+  });
+}
+
+async function planInWorker(req: TripRequest, pack: RegionPack, seed: number, osrmUrl: string, fx?: FxRates | null): Promise<TripPlan | null> {
+  const w = getWorker();
+  if (!w) return null;
+  const packKey = `${pack.id}@${pack.version}@${pack.generatedAt}`;
+  const base = { req, packKey, seed, osrmUrl, fx: fx ?? null };
+  let res = await askWorker(w, workerPackKey === packKey ? base : { ...base, pack });
+  if (!res.ok && res.needPack) res = await askWorker(w, { ...base, pack });
+  if (!res.ok) throw new Error(res.error);
+  workerPackKey = packKey;
+  return res.plan;
+}
+
 export async function planTrip(req: TripRequest, pack: RegionPack, index: PlaceIndex, seed: number, osrmUrl: string, fx?: FxRates | null): Promise<TripPlan> {
   const ctx = planContext(index, req.transport, seed, fx);
   try {
-    const plan = await core.planTripWithRoutes(req, pack, ctx, osrmUrl);
+    let plan: TripPlan | null = null;
+    try {
+      plan = await planInWorker(req, pack, seed, osrmUrl, fx);
+    } catch (err) {
+      console.warn("[planlama işçisi] ana iş parçacığına düşülüyor:", err);
+    }
+    plan ??= await core.planTripWithRoutes(req, pack, ctx, osrmUrl);
     if (!plan || !Array.isArray(plan.days) || plan.days.length === 0) throw new Error("Planlayıcı boş bir plan döndürdü.");
     return plan;
   } catch (err) {
