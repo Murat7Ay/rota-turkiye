@@ -247,6 +247,13 @@ export default function App() {
                 <a
                   href={`#/${t.route}`}
                   aria-current={active ? "page" : undefined}
+                  onClick={(e) => {
+                    // Açık sekmeye yeniden dokununca başa dön (mobil alışkanlığı)
+                    if (active) {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }
+                  }}
                   className={cx("flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold transition", active ? "text-brand" : "text-muted")}
                 >
                   <span className={cx("grid h-7 w-12 place-items-center rounded-full transition", active && "bg-brand-soft")}>{t.icon}</span>

@@ -1,13 +1,14 @@
 // Ayarlar: rota sunucusu, yakınlık bildirimleri, planlayıcı tohumu, veri yönetimi, atıflar.
 import { useRef, useState, type CSSProperties } from "react";
-import { Bell, Dices, Download, ExternalLink, RotateCcw, Trash2, Upload } from "lucide-react";
+import { Bell, Dices, Download, ExternalLink, Map as MapIcon, RotateCcw, Trash2, Upload } from "lucide-react";
 import { CATEGORIES, DEFAULT_OSRM_URL, formatHHmm, parseHHmm, type PlaceCategory } from "@rota/core";
 import { Sheet } from "../components/Sheet";
 import { Button, Card, Chip, Field, PageHeader, SectionTitle, Stepper, Toggle, cx, inputClass } from "../components/ui";
 import { notificationPermission, requestNotificationPermission, showNotification } from "../lib/notify";
 import { clearAllData } from "../state/persist";
 import { usePack } from "../state/pack";
-import { useSettings } from "../state/settings";
+import { BUILD_MAPBOX_TOKEN, useSettings } from "../state/settings";
+import { isMapboxToken } from "../map/mapbox";
 import { useTrip } from "../state/trip";
 import { toast } from "../state/ui";
 import { fmtDateShort } from "../lib/format";
@@ -107,10 +108,12 @@ export default function Settings() {
   return (
     <div className="pb-28 lg:pb-10">
       <PageHeader title="Ayarlar" subtitle="Her şey cihazında kalır; hesap yok, takip yok." />
-      <div className="mx-auto grid max-w-3xl gap-4 px-4 sm:px-6">
+      <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-4 px-4 sm:px-6">
         {/* ------------------------------------------------ yapay zekâ (isteğe bağlı, kendi anahtarın) */}
         <AiSettingsCard />
         <VoiceSettings />
+
+        <MapboxCard />
 
         {/* ------------------------------------------------ rota sunucusu */}
         <Card className="space-y-3 p-4 sm:p-5">
@@ -374,5 +377,86 @@ function RangeRow({ label, unit, min, max, step, value, onChange }: { label: str
         onChange={(e) => onChange(Number(e.target.value))}
       />
     </div>
+  );
+}
+
+/** Etrafım haritası: isteğe bağlı Mapbox anahtarı. Anahtar public (pk.) olmalı; gizli anahtar istenmez. */
+function MapboxCard() {
+  const saved = useSettings((s) => s.mapboxToken);
+  const setToken = useSettings((s) => s.setMapboxToken);
+  const [draft, setDraft] = useState(saved);
+  const t = draft.trim();
+  const secret = /^sk\./.test(t);
+  const invalid = t.length > 0 && !secret && !isMapboxToken(t);
+  const active = saved || BUILD_MAPBOX_TOKEN;
+  return (
+    <Card className="space-y-3 p-4 sm:p-5">
+      <SectionTitle>Harita görünümü</SectionTitle>
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-sea-soft text-sea">
+          <MapIcon className="size-5" aria-hidden />
+        </span>
+        <p className="text-sm text-ink-2">
+          Etrafım'daki 3B maket varsayılan olarak OpenFreeMap ile çizilir. Bir Mapbox <b>public</b> anahtarı (pk.…) eklersen çevrimiçiyken Mapbox
+          haritası kullanılır; çevrimdışıyken ve indirilen paketlerde yine OpenFreeMap çalışır.
+        </p>
+      </div>
+      <p className="text-sm">
+        Şu an:{" "}
+        <b className={active ? "text-good" : "text-ink"}>
+          {active ? (saved ? "Mapbox (senin anahtarın)" : "Mapbox (uygulamanın anahtarı)") : "OpenFreeMap"}
+        </b>
+      </p>
+      <Field
+        label="Mapbox public anahtarı"
+        htmlFor="mapbox-token"
+        hint={
+          <a href="https://console.mapbox.com/account/access-tokens/" target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 font-semibold text-sea hover:underline">
+            Anahtar al: console.mapbox.com <ExternalLink className="size-3" aria-hidden />
+          </a>
+        }
+      >
+        <input
+          id="mapbox-token"
+          className={cx(inputClass, "font-mono")}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="pk.eyJ1Ijoi…"
+          spellCheck={false}
+          autoCapitalize="off"
+          autoComplete="off"
+        />
+      </Field>
+      {secret && <p className="text-sm font-semibold text-bad">Bu gizli (sk.) bir anahtar; tarayıcıya konmamalı. Mapbox'tan bir public (pk.) anahtar oluştur.</p>}
+      {invalid && <p className="text-sm text-warn">Mapbox public anahtarları “pk.” ile başlar ve iki noktayla ayrılmış üç parçadan oluşur.</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="primary"
+          disabled={t === saved || secret || invalid}
+          onClick={() => {
+            setToken(t);
+            toast({ kind: "success", title: t ? "Mapbox anahtarı kaydedildi" : "Mapbox anahtarı kaldırıldı", body: "Etrafım'ı yeniden açınca geçerli olur." });
+          }}
+        >
+          Kaydet
+        </Button>
+        {saved && (
+          <Button
+            variant="ghost"
+            icon={<Trash2 className="size-4" />}
+            onClick={() => {
+              setToken("");
+              setDraft("");
+            }}
+          >
+            Kaldır
+          </Button>
+        )}
+      </div>
+      <p className="text-xs text-muted">
+        Anahtarı Mapbox panelinde yalnızca bu sitenin adresiyle sınırlandırmanı öneririz (URL restriction). Harita MapLibre ile çizildiği için kullanım
+        Mapbox'ta “harita yüklemesi” değil karo isteği (Vector Tiles API) olarak sayılır; ücretsiz kotayı Mapbox fiyat sayfasından kontrol et.
+      </p>
+    </Card>
   );
 }

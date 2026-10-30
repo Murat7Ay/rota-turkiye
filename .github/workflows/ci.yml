@@ -29,6 +29,8 @@ jobs:
         run: pnpm build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          # İsteğe bağlı: depo gizlisi MAPBOX_TOKEN (public pk.… anahtar) varsa Etrafım Mapbox ile çizilir
+          VITE_MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
       - if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:

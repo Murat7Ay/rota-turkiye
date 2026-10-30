@@ -1,18 +1,18 @@
 // Etrafım — imza görünüm: çevrenin dairesel, eğik, yavaşça dönen 3B dioraması ve
 // yakındaki öne çıkan yerlerin listesi (uzaklık, yön oku, açık/kapalı).
-import { Suspense, lazy, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ArrowUp, Crosshair, LocateFixed, MapPin, Navigation, Orbit, Radio, Route } from "lucide-react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUp, Crosshair, FlaskConical, LocateFixed, MapPin, Navigation, Orbit, Radio, Route, Satellite, X } from "lucide-react";
 import { CATEGORIES, type LatLng, type PlaceCategory, type Town } from "@rota/core";
 import { LiveControls } from "../components/LiveControls";
 import { TownPicker } from "../components/TownPicker";
-import { Badge, Card, Chip, PageHeader, SectionTitle, Segmented, Spinner, cx } from "../components/ui";
+import { Badge, Chip, IconButton, PageHeader, SectionTitle, Segmented, Spinner, cx } from "../components/ui";
 import { SAMPLE_PACK_ID } from "../dev/sample";
 import * as C from "../lib/core";
-import { compassLong, compassShort, fmtKm } from "../lib/format";
+import { compassLong, fmtKm } from "../lib/format";
 import { directionsUrl } from "../lib/geo";
 import { startSimulation } from "../lib/simulation";
 import { usePack } from "../state/pack";
-import { useSettings } from "../state/settings";
+import { useMapboxToken, useSettings } from "../state/settings";
 import { useTrip } from "../state/trip";
 import { toast, useUi } from "../state/ui";
 import { TastesPanel, WarningsBanner } from "../features/knowledge";
@@ -30,7 +30,7 @@ const FILTERS: Array<{ id: string; label: string; emoji: string; cats: PlaceCate
   { id: "alisveris", label: "Alışveriş", emoji: "🛍️", cats: ["carsi", "pazar", "yoresel_urun", "hediyelik"] },
 ];
 
-const RADII = [0.5, 1, 1.5, 2, 3, 4, 5];
+const RADII = [0.5, 1, 2, 3, 5];
 
 export default function Around() {
   const plan = useTrip((s) => s.plan);
@@ -51,6 +51,9 @@ export default function Around() {
   const [filter, setFilter] = useState("hepsi");
   const [active, setActive] = useState<string | null>(null);
   const [rotate, setRotate] = useState(true);
+  const mapboxToken = useMapboxToken();
+  const [provider, setProvider] = useState<"mapbox" | "openfreemap">("openfreemap");
+  const mapRef = useRef<HTMLDivElement>(null);
 
   // Bir paket yüklü olsun
   useEffect(() => {
@@ -115,23 +118,39 @@ export default function Around() {
   }
 
   const sourceLabel =
-    mode === "konum"
-      ? position?.source === "gps"
-        ? `📡 GPS konumun${position.accuracyM ? ` (±${Math.round(position.accuracyM)} m)` : ""}`
-        : "📡 Konum bekleniyor…"
-      : mode === "sim"
-        ? sim
-          ? `🧪 Simülasyon · ${sim.dayIndex + 1}. gün`
-          : "🧪 Simülasyon kapalı"
-        : `📍 ${manual?.name ?? fallbackCenter.name ?? "Seçilen konum"}`;
+    mode === "konum" ? (
+      <span className="inline-flex items-center gap-1.5">
+        <Satellite className="size-3.5" aria-hidden />
+        {position?.source === "gps" ? `GPS konumun${position.accuracyM ? ` (±${Math.round(position.accuracyM)} m)` : ""}` : "Konum bekleniyor…"}
+      </span>
+    ) : mode === "sim" ? (
+      <span className="inline-flex items-center gap-1.5">
+        <FlaskConical className="size-3.5" aria-hidden />
+        {sim ? `Simülasyon · ${sim.dayIndex + 1}. gün` : "Simülasyon kapalı"}
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1.5">
+        <MapPin className="size-3.5" aria-hidden />
+        {manual?.name ?? fallbackCenter.name ?? "Seçilen konum"}
+      </span>
+    );
 
   const activeH = highlights.find((h) => h.place.id === active);
 
+  /** Listeden seçince mobilde maket görünür olsun (yan yana düzende gerek yok) */
+  function selectFromList(id: string | null) {
+    setActive(id);
+    if (id && window.matchMedia?.("(max-width: 1023px)").matches) {
+      mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   return (
-    <div className="pb-28 lg:pb-10">
-      <PageHeader title="Etrafım" subtitle="Çevrendeki değerli yerler, üç boyutlu bir maket gibi." eyebrow={sourceLabel} />
-      <div className="mx-auto grid max-w-6xl gap-5 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
-        <div className="space-y-4 lg:sticky lg:top-4">
+    <div className="pb-10">
+      <PageHeader title="Etrafım" subtitle="Çevrendeki değerli yerler, 3B bir maket üstünde." eyebrow={sourceLabel} />
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-4 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-6">
+        {/* ------------------------------------------------ maket ve kontroller */}
+        <div ref={mapRef} className="scroll-mt-3 space-y-3 lg:col-start-1 lg:row-start-1">
           <Segmented<Mode>
             label="Konum kaynağı"
             value={mode}
@@ -139,11 +158,22 @@ export default function Around() {
             options={[
               { value: "konum", label: <><LocateFixed className="size-4" aria-hidden /> Konumum</> },
               { value: "sim", label: <><Route className="size-4" aria-hidden /> Simülasyon</> },
-              { value: "sec", label: <><MapPin className="size-4" aria-hidden /> Konum seç</> },
+              { value: "sec", label: <><MapPin className="size-4" aria-hidden /> Seç</> },
             ]}
           />
 
-          <div className="relative px-2 pb-6 pt-3">
+          {mode === "sec" && (
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <TownPicker compact towns={pack?.towns ?? []} label="Yerleşim seç" value={manual?.name ? { name: manual.name } : null} onChange={chooseTown} placeholder="Yerleşim seç" />
+              </div>
+              <Chip selected={pick} onClick={() => setPick(!pick)} className="shrink-0">
+                <Crosshair className="size-4" aria-hidden /> {pick ? "İptal" : "Haritadan"}
+              </Chip>
+            </div>
+          )}
+
+          <div className="relative -mx-2 overflow-x-clip px-2 pb-2 pt-3">
             {index ? (
               <Suspense fallback={<div className="mx-auto grid aspect-square w-full max-w-[460px] place-items-center rounded-full bg-surface-2"><Spinner /></div>}>
                 <Diorama
@@ -160,6 +190,8 @@ export default function Around() {
                     setPick(false);
                   }}
                   autoRotate={rotate}
+                  mapboxToken={mapboxToken || undefined}
+                  onProvider={setProvider}
                 />
               </Suspense>
             ) : (
@@ -167,67 +199,72 @@ export default function Around() {
                 <Spinner />
               </div>
             )}
-            {activeH && (
-              <div className="absolute inset-x-6 bottom-0 mx-auto max-w-sm animate-pop rounded-2xl border border-line bg-surface/95 p-3 shadow-lift backdrop-blur">
-                <p className="font-bold text-ink">
-                  {CATEGORIES[activeH.place.cat].emoji} {activeH.place.name}
-                </p>
-                <p className="text-sm text-muted">
-                  {fmtKm(activeH.distanceKm)} · {compassLong(activeH.bearingDeg)} yönünde
-                </p>
-              </div>
+            <div className="absolute right-1 top-1">
+              <IconButton
+                label={rotate ? "Döndürmeyi durdur" : "Otomatik döndür"}
+                active={rotate}
+                onClick={() => setRotate(!rotate)}
+                className="border border-line bg-surface/90 shadow-card backdrop-blur"
+              >
+                <Orbit className="size-5" />
+              </IconButton>
+            </div>
+            {pick && (
+              <p className="pointer-events-none absolute inset-x-0 top-2 mx-auto w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-bg shadow-card">
+                Maketin üstünde bir noktaya dokun
+              </p>
             )}
           </div>
 
-          <Card className="space-y-3 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <label htmlFor="radius" className="text-sm font-semibold text-ink-2">
-                Yarıçap
-              </label>
-              <span className="text-sm font-bold text-brand tabular">{fmtKm(radiusKm)}</span>
+          {activeH && (
+            <div className="animate-pop rounded-3xl border border-brand/40 bg-surface p-3.5 shadow-lift">
+              <div className="flex items-start gap-3">
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-soft text-2xl" aria-hidden>
+                  {CATEGORIES[activeH.place.cat].emoji}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold leading-snug text-ink">{activeH.place.name}</p>
+                  <p className="text-sm text-muted">
+                    {CATEGORIES[activeH.place.cat].label} · {fmtKm(activeH.distanceKm)} · {compassLong(activeH.bearingDeg)} yönünde
+                  </p>
+                </div>
+                <IconButton label="Kapat" onClick={() => setActive(null)} className="-mr-1 -mt-1 size-10 text-muted">
+                  <X className="size-5" />
+                </IconButton>
+              </div>
+              <a
+                href={directionsUrl(activeH.place.loc, center)}
+                target="_blank"
+                rel="noopener"
+                className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-sea text-[15px] font-semibold text-brand-ink hover:brightness-110"
+              >
+                <Navigation className="size-4" aria-hidden /> Yol tarifi
+              </a>
             </div>
-            <input
-              id="radius"
-              type="range"
-              className="range"
-              min={0}
-              max={RADII.length - 1}
-              step={1}
-              value={Math.max(0, RADII.indexOf(radiusKm))}
-              style={{ "--fill": `${(Math.max(0, RADII.indexOf(radiusKm)) / (RADII.length - 1)) * 100}%` } as CSSProperties}
-              onChange={(e) => setRadius(RADII[Number(e.target.value)] ?? 1)}
-              aria-valuetext={fmtKm(radiusKm)}
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              {mode === "sec" && (
-                <>
-                  <Chip selected={pick} onClick={() => setPick(!pick)}>
-                    <Crosshair className="size-4" aria-hidden /> {pick ? "Maketin üstüne dokun" : "Haritadan seç"}
-                  </Chip>
-                  <div className="min-w-[180px] flex-1">
-                    <TownPicker compact towns={pack?.towns ?? []} label="Yerleşim seç" value={manual?.name ? { name: manual.name } : null} onChange={chooseTown} placeholder="Yerleşim seç" />
-                  </div>
-                </>
-              )}
-              <Chip selected={rotate} onClick={() => setRotate(!rotate)} title="Otomatik döndürme">
-                <Orbit className="size-4" aria-hidden /> Döndür
-              </Chip>
+          )}
+
+          <div role="radiogroup" aria-label="Yarıçap" className="flex items-center gap-2">
+            <span className="shrink-0 text-sm font-semibold text-ink-2">Yarıçap</span>
+            <div className="no-scrollbar -mr-4 flex gap-1.5 overflow-x-auto pr-4 sm:mr-0 sm:pr-0">
+              {RADII.map((r) => (
+                <Chip key={r} selected={radiusKm === r} onClick={() => setRadius(r)} className="shrink-0 tabular">
+                  {fmtKm(r)}
+                </Chip>
+              ))}
             </div>
-          </Card>
-
-          {(mode === "konum" || mode === "sim") && <LiveControls dayIndex={sim?.dayIndex ?? selectedDay} />}
-
-          <WarningsBanner loc={center} date={new Date()} />
-          <TastesPanel loc={center} radiusKm={25} />
+          </div>
         </div>
 
-        <section aria-label="Yakındaki öne çıkan yerler" className="space-y-3">
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-            {FILTERS.map((f) => (
-              <Chip key={f.id} selected={filter === f.id} onClick={() => setFilter(f.id)} className="shrink-0">
-                <span aria-hidden>{f.emoji}</span> {f.label}
-              </Chip>
-            ))}
+        {/* ------------------------------------------------ liste (mobilde maketin hemen altında) */}
+        <section aria-label="Yakındaki öne çıkan yerler" className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <div className="sticky top-0 z-10 -mx-4 bg-bg/90 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+              {FILTERS.map((f) => (
+                <Chip key={f.id} selected={filter === f.id} onClick={() => setFilter(f.id)} className="shrink-0">
+                  <span aria-hidden>{f.emoji}</span> {f.label}
+                </Chip>
+              ))}
+            </div>
           </div>
           <SectionTitle>
             {highlights.length ? `${highlights.length} öne çıkan yer · ${fmtKm(radiusKm)} içinde` : "Öne çıkan yerler"}
@@ -250,35 +287,38 @@ export default function Around() {
                       isActive ? "border-brand ring-1 ring-brand" : "border-line",
                     )}
                   >
-                    <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setActive(isActive ? null : h.place.id)}>
+                    <button
+                      type="button"
+                      aria-pressed={isActive}
+                      className="flex min-h-12 min-w-0 flex-1 items-center gap-3 text-left"
+                      onClick={() => selectFromList(isActive ? null : h.place.id)}
+                    >
                       <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-surface-2 text-2xl" aria-hidden>
                         {info.emoji}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-bold text-ink">{h.place.name}</span>
-                        <span className="block truncate text-sm text-muted">
-                          {info.label}
-                          {h.place.tags.includes("unesco") ? " · UNESCO" : ""}
-                        </span>
-                        <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
+                          <span className="truncate">
+                            {info.label}
+                            {h.place.tags.includes("unesco") ? " · UNESCO" : ""}
+                          </span>
                           {h.openNow === true && <Badge tone="good">Açık</Badge>}
                           {h.openNow === false && <Badge tone="bad">Kapalı</Badge>}
-                          {h.openNow === null && <Badge>Saat bilinmiyor</Badge>}
                         </span>
                       </span>
                     </button>
-                    <div className="flex shrink-0 flex-col items-center gap-0.5 text-center" aria-label={`${fmtKm(h.distanceKm)}, ${compassLong(h.bearingDeg)} yönünde`}>
-                      <span className="grid size-9 place-items-center rounded-full bg-brand-soft text-brand">
-                        <ArrowUp className="size-5 transition-transform" style={{ transform: `rotate(${h.bearingDeg}deg)` }} aria-hidden />
+                    <div className="flex w-12 shrink-0 flex-col items-center gap-0.5 text-center" aria-label={`${fmtKm(h.distanceKm)}, ${compassLong(h.bearingDeg)} yönünde`}>
+                      <span className="grid size-8 place-items-center rounded-full bg-brand-soft text-brand">
+                        <ArrowUp className="size-4 transition-transform" style={{ transform: `rotate(${h.bearingDeg}deg)` }} aria-hidden />
                       </span>
                       <span className="text-xs font-bold text-ink tabular">{fmtKm(h.distanceKm)}</span>
-                      <span className="text-[10px] font-semibold text-muted">{compassShort(h.bearingDeg)}</span>
                     </div>
                     <a
                       href={directionsUrl(h.place.loc, center)}
                       target="_blank"
                       rel="noopener"
-                      className="grid size-10 shrink-0 place-items-center rounded-2xl text-sea hover:bg-sea-soft"
+                      className="grid size-11 shrink-0 place-items-center rounded-2xl bg-sea-soft text-sea hover:brightness-95"
                       aria-label={`${h.place.name} yol tarifi`}
                     >
                       <Navigation className="size-5" />
@@ -293,10 +333,34 @@ export default function Around() {
               <Spinner className="size-4" /> Bölge paketi yükleniyor…
             </div>
           )}
-          <p className="flex items-center gap-1.5 pt-2 text-xs text-muted">
-            <Radio className="size-3.5" aria-hidden /> Yön okları kuzeye göredir. Harita: © OpenStreetMap katkıcıları · OpenFreeMap
+          <p className="flex items-start gap-1.5 pt-1 text-xs text-muted">
+            <Radio className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            <span>
+              Yön okları kuzeye göredir. Harita:{" "}
+              {provider === "mapbox" ? (
+                <>
+                  <a className="underline" href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">
+                    © Mapbox
+                  </a>{" "}
+                  ·{" "}
+                  <a className="underline" href="https://apps.mapbox.com/feedback/" target="_blank" rel="noopener">
+                    Haritayı iyileştir
+                  </a>
+                </>
+              ) : (
+                "OpenFreeMap"
+              )}{" "}
+              · © OpenStreetMap katkıcıları
+            </span>
           </p>
         </section>
+
+        {/* ------------------------------------------------ canlı mod ve yöre bilgisi */}
+        <div className="space-y-4 lg:col-start-1 lg:row-start-2">
+          {(mode === "konum" || mode === "sim") && <LiveControls dayIndex={sim?.dayIndex ?? selectedDay} />}
+          <WarningsBanner loc={center} date={new Date()} />
+          <TastesPanel loc={center} radiusKm={25} />
+        </div>
       </div>
     </div>
   );

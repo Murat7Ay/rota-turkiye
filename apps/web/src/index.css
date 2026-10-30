@@ -138,6 +138,8 @@ body,
 }
 body {
   margin: 0;
+  /* Alt sayfalar ve yatay kaydırıcılarda "lastik" kaydırma sayfayı sürüklemesin */
+  overscroll-behavior-y: none;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
@@ -168,6 +170,14 @@ textarea {
 input[type="date"],
 input[type="time"] {
   min-height: 44px;
+}
+/* iOS Safari 16 px'ten küçük yazılı alana odaklanınca sayfayı yakınlaştırır; telefonda en az 16 px */
+@media (max-width: 639px) {
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not(.text-lg),
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 .tabular {
   font-variant-numeric: tabular-nums;

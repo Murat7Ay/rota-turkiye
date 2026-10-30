@@ -114,7 +114,7 @@ export default function Budget() {
           toast({ kind: "success", title: "Harcamaya eklendi", body: note });
         }}
       />
-      <div className="mx-auto grid max-w-5xl gap-4 px-4 sm:px-6 lg:grid-cols-2 lg:items-start">
+      <div className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)] gap-4 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
         <div className="grid gap-4">
           {/* durum */}
           <Card className="overflow-hidden p-0">

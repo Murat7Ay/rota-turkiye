@@ -57,6 +57,7 @@ import { VoiceToggle } from "../features/voice/VoiceToggle";
 import * as C from "../lib/core";
 import { fmtDateLong, fmtDuration, fmtKm, fmtTry } from "../lib/format";
 import { directionsUrl } from "../lib/geo";
+import { haptic } from "../lib/haptics";
 import { showNotification, notificationPermission, requestNotificationPermission } from "../lib/notify";
 import { useActiveDay, usePlanData, useTodayDate } from "../state/hooks";
 import { usePack } from "../state/pack";
@@ -209,6 +210,7 @@ export default function Today() {
   }
 
   function markDone(stop: PlanStop) {
+    haptic();
     commit(C.markStop(plan!, dayIndex, stop.id, "done"), "Harika, işaretlendi ✓");
   }
 
@@ -276,7 +278,7 @@ export default function Today() {
         subtitle={plan.request.title}
         action={<VoiceToggle showLabel />}
       />
-      <div className="mx-auto grid max-w-3xl gap-4 px-4 sm:px-6">
+      <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-4 px-4 sm:px-6">
         {(planIsSample || fellBack) && (
           <p className="flex items-start gap-2 rounded-2xl border border-warn/30 bg-warn-soft px-3.5 py-2.5 text-sm text-warn">
             <FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden />

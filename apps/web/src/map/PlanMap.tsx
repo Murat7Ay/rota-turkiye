@@ -179,7 +179,9 @@ export default function PlanMap({ plan, dayIndex, index, discoveries, activeStop
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-surface-2">
-      <div ref={el} className="absolute inset-0" />
+      <div className="absolute inset-0">
+        <div ref={el} className="h-full w-full" />
+      </div>
       {failed && (
         <div className="absolute inset-0 grid place-items-center p-6 text-center">
           <div>

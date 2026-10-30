@@ -304,7 +304,7 @@ export default function CreateTrip() {
         subtitle="Türkiye'ye özel: bayram takvimi, namaz saatleri, Müzekart, esnaf lokantaları. Hepsi telefonunda, çevrimdışı."
       />
 
-      <div className="mx-auto grid max-w-3xl gap-5 px-4 sm:px-6">
+      <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)] gap-5 px-4 sm:px-6">
         {!hasPlan && <Welcome onSample={useSample} />}
 
         {/* ------------------------------------------------ tek cümleyle (isteğe bağlı AI) */}

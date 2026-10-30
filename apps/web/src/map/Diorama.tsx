@@ -1,9 +1,11 @@
 // "Etrafım" dioraması: dairesel maskeli, ~60° eğik, yavaşça dönen 3B bir şehir maketi.
-// MapLibre + OpenFreeMap liberty stili (3B bina katmanı), yarıçap halkası, dış alan
-// vinyeti, nabız atan "sen buradasın" noktası ve emoji POI iğneleri.
+// MapLibre + Mapbox (anahtar varsa ve çevrimiçiyse) ya da OpenFreeMap liberty stili, 3B binalar,
+// yarıçap halkası, dış alan vinyeti, nabız atan "sen buradasın" noktası ve emoji POI iğneleri.
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import type { StyleSpecification } from "maplibre-gl";
 import { CATEGORIES, type LatLng, type NearbyHighlight, type PlaceCategory } from "@rota/core";
 import { circlePolygon, zoomForRadius } from "../lib/geo";
+import { loadMapboxStyle, mapboxTransformRequest } from "./mapbox";
 import { MLMap, Marker, STYLES, ensure3dBuildings, hideStylePois, prefersDark, reducedMotion, setGeoJSON, youDotElement } from "./maplibre";
 
 export interface DioramaProps {
@@ -17,6 +19,10 @@ export interface DioramaProps {
   onPick: (loc: LatLng) => void;
   autoRotate: boolean;
   onBearing?: (deg: number) => void;
+  /** Mapbox public anahtarı (pk.…); yoksa ya da çevrimdışıysa OpenFreeMap */
+  mapboxToken?: string;
+  /** Hangi karo sağlayıcısıyla çizildiği (atıf metni için) */
+  onProvider?: (p: "mapbox" | "openfreemap") => void;
 }
 
 const GROUP_COLORS: Record<string, string> = {
@@ -77,6 +83,27 @@ export default function Diorama(props: DioramaProps) {
   // ---------------------------------------------------------- kurulum
   useEffect(() => {
     if (!el.current) return;
+    let disposed = false;
+    let teardown = () => {};
+    const ctl = new AbortController();
+    const token = cbs.current.mapboxToken;
+    void (async () => {
+      // Mapbox stili önce indirilip arındırılır; olmazsa hemen OpenFreeMap
+      const mb = token ? await loadMapboxStyle(prefersDark(), token, ctl.signal) : null;
+      if (disposed || !el.current) return;
+      cbs.current.onProvider?.(mb ? "mapbox" : "openfreemap");
+      teardown = setup(mb, token ?? "");
+    })();
+    return () => {
+      disposed = true;
+      ctl.abort();
+      teardown();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function setup(mapboxStyle: StyleSpecification | null, token: string): () => void {
+    if (!el.current) return () => {};
     const size = el.current.clientWidth || 360;
     const z = zoomForRadius(radiusKm, center.lat, size);
     anim.current.zoom = anim.current.targetZoom = z;
@@ -84,7 +111,8 @@ export default function Diorama(props: DioramaProps) {
     try {
       map = new MLMap({
         container: el.current,
-        style: STYLES.liberty,
+        style: mapboxStyle ?? STYLES.liberty,
+        ...(mapboxStyle ? { transformRequest: mapboxTransformRequest(token), validateStyle: false } : {}),
         center: [center.lon, center.lat],
         zoom: z,
         pitch: 60,
@@ -98,7 +126,7 @@ export default function Diorama(props: DioramaProps) {
     } catch (e) {
       console.warn("Diorama kurulamadı", e);
       setFailed(true);
-      return;
+      return () => {};
     }
     mapRef.current = map;
 
@@ -143,7 +171,16 @@ export default function Diorama(props: DioramaProps) {
       youRef.current = you;
       setReady(true);
     });
+    let fellBack = false;
     map.on("error", (e) => {
+      // Mapbox karoları reddedilirse (anahtar, kota, adres kısıtı) ilk yüklemede OpenFreeMap'e geç
+      if (mapboxStyle && !fellBack && !map.loaded()) {
+        fellBack = true;
+        console.warn("[mapbox] harita yüklenemedi, OpenFreeMap'e geçiliyor", e.error);
+        cbs.current.onProvider?.("openfreemap");
+        map.setStyle(STYLES.liberty);
+        return;
+      }
       if (!map.loaded()) {
         console.warn("Diorama stili yüklenemedi", e.error);
         setFailed(true);
@@ -201,8 +238,7 @@ export default function Diorama(props: DioramaProps) {
       mapRef.current = null;
       setReady(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
 
   useEffect(() => {
     anim.current.rotate = autoRotate;
@@ -325,7 +361,10 @@ export default function Diorama(props: DioramaProps) {
           role="application"
           aria-label="Çevrenin üç boyutlu görünümü. Sürükleyerek döndürebilirsin."
         >
-          <div ref={el} className="absolute inset-0 dark:brightness-[0.88] dark:saturate-[0.9]" />
+          <div className="absolute inset-0 dark:brightness-[0.88] dark:saturate-[0.9]">
+            {/* MapLibre kapsayıcıya position: relative verir; konum sarmalayıcıda ki yükseklik 0 kalmasın */}
+            <div ref={el} className="h-full w-full" />
+          </div>
           {/* parlama ve iç gölge */}
           <div
             className="pointer-events-none absolute inset-0 rounded-full"
