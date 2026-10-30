@@ -33,7 +33,8 @@ export { DAY_COLORS_CSS as DAY_COLORS, dayColorCss as dayColor } from "../compon
 
 /**
  * 3B binalar: Stil zaten fill-extrusion katmanı içeriyorsa (OpenFreeMap liberty'de
- * "building-3d" var) onu sıcak bir tona boyar; yoksa openmaptiles "building" katmanından ekler.
+ * "building-3d" var) onu sıcak bir tona boyar; yoksa openmaptiles ya da Mapbox (composite)
+ * "building" katmanından ekler.
  */
 export function ensure3dBuildings(map: MLMap, opts: { color?: string; opacity?: number; minzoom?: number } = {}) {
   const style = map.getStyle() as StyleSpecification | undefined;
@@ -47,7 +48,7 @@ export function ensure3dBuildings(map: MLMap, opts: { color?: string; opacity?: 
         map.setPaintProperty(l.id, "fill-extrusion-color", [
           "interpolate",
           ["linear"],
-          ["coalesce", ["get", "render_height"], 0],
+          ["coalesce", ["get", "render_height"], ["get", "height"], 0],
           0,
           color,
           30,
@@ -75,8 +76,9 @@ export function ensure3dBuildings(map: MLMap, opts: { color?: string; opacity?: 
       minzoom: opts.minzoom ?? 13.5,
       paint: {
         "fill-extrusion-color": color,
-        "fill-extrusion-height": ["coalesce", ["get", "render_height"], 6],
-        "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
+        // OpenMapTiles: render_height; Mapbox Streets: height / min_height
+        "fill-extrusion-height": ["coalesce", ["get", "render_height"], ["get", "height"], 6],
+        "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], ["get", "min_height"], 0],
         "fill-extrusion-opacity": opacity,
       },
     },

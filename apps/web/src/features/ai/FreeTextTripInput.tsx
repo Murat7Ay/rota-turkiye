@@ -70,6 +70,28 @@ export function FreeTextTripInput({ pack, defaults, today, onApply, onOpenSettin
     setLoading(false);
   }
 
+  // Bağlantı yokken kutu tek satıra iner: formun önünde yer kaplamasın
+  if (loaded && !hasKey) {
+    return (
+      <section className={cx("flex items-center gap-3 rounded-3xl border border-dashed border-line bg-surface/60 p-3.5", className)} aria-labelledby={`${id}-t`}>
+        <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand">
+          <WandSparkles className="size-[18px]" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 id={`${id}-t`} className="text-sm font-bold text-ink">
+            Tek cümleyle anlatmak ister misin?
+          </h2>
+          <p className="text-xs text-muted">Yapay zekâ bağlantısı kurarsan formu senin yerine doldurur.</p>
+        </div>
+        {onOpenSettings && (
+          <AiButton variant="ghost" size="sm" onClick={onOpenSettings}>
+            Bağla
+          </AiButton>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className={cx("space-y-3 rounded-3xl border border-line bg-surface p-4 sm:p-5", className)} aria-labelledby={`${id}-t`}>
       <header className="flex items-center gap-2">
@@ -101,7 +123,6 @@ export function FreeTextTripInput({ pack, defaults, today, onApply, onOpenSettin
         className="w-full resize-y rounded-2xl border border-line bg-bg p-3.5 text-[15px] leading-relaxed text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60"
       />
 
-      {loaded && !hasKey && <NoKeyHint onOpenSettings={onOpenSettings}>Serbest metinle gezi kurmak için Ayarlar'dan kendi Anthropic API anahtarını ekle. Formu elle doldurmak her zaman mümkün.</NoKeyHint>}
       {hasKey && !pack && <NoKeyHint>Önce bir bölge paketi seç; yer adları o paketteki yerleşimlere eşlenir.</NoKeyHint>}
 
       <div className="flex flex-wrap items-center gap-2">

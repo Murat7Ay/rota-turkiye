@@ -9,12 +9,15 @@ export interface SettingsState {
   seed: number;
   /** Etrafım yarıçapı, km */
   aroundRadiusKm: number;
+  /** Etrafım haritası için Mapbox public anahtarı (pk.…); boşsa VITE_MAPBOX_TOKEN, o da yoksa OpenFreeMap */
+  mapboxToken: string;
   hydrated: boolean;
   setOsrmUrl: (url: string) => void;
   setProximity: (patch: Partial<ProximitySettings>) => void;
   resetProximity: () => void;
   setSeed: (seed: number) => void;
   setAroundRadius: (km: number) => void;
+  setMapboxToken: (token: string) => void;
   replaceAll: (s: Partial<Pick<SettingsState, "osrmUrl" | "proximity" | "seed" | "aroundRadiusKm">>) => void;
 }
 
@@ -25,19 +28,21 @@ export const useSettings = create<SettingsState>()(
       proximity: { ...DEFAULT_PROXIMITY_SETTINGS },
       seed: 42,
       aroundRadiusKm: 1,
+      mapboxToken: "",
       hydrated: false,
       setOsrmUrl: (osrmUrl) => set({ osrmUrl: osrmUrl.trim().replace(/\/+$/, "") || DEFAULT_OSRM_URL }),
       setProximity: (patch) => set((s) => ({ proximity: { ...s.proximity, ...patch } })),
       resetProximity: () => set({ proximity: { ...DEFAULT_PROXIMITY_SETTINGS } }),
       setSeed: (seed) => set({ seed: Math.max(0, Math.floor(seed) || 0) }),
       setAroundRadius: (aroundRadiusKm) => set({ aroundRadiusKm }),
+      setMapboxToken: (t) => set({ mapboxToken: t.trim() }),
       replaceAll: (s) => set(s),
     }),
     {
       name: "rota-settings",
       version: 1,
       storage: idbStorage,
-      partialize: (s) => ({ osrmUrl: s.osrmUrl, proximity: s.proximity, seed: s.seed, aroundRadiusKm: s.aroundRadiusKm }),
+      partialize: (s) => ({ osrmUrl: s.osrmUrl, proximity: s.proximity, seed: s.seed, aroundRadiusKm: s.aroundRadiusKm, mapboxToken: s.mapboxToken }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<SettingsState>;
         return { ...current, ...p, proximity: { ...DEFAULT_PROXIMITY_SETTINGS, ...(p.proximity ?? {}) } };
@@ -48,3 +53,12 @@ export const useSettings = create<SettingsState>()(
     },
   ),
 );
+
+/** Dağıtımın varsayılan Mapbox anahtarı (GitHub Pages derlemesinde MAPBOX_TOKEN gizlisinden) */
+export const BUILD_MAPBOX_TOKEN: string = (import.meta.env.VITE_MAPBOX_TOKEN as string | undefined)?.trim() ?? "";
+
+/** Kullanıcının girdiği anahtar öncelikli */
+export function useMapboxToken(): string {
+  const own = useSettings((s) => s.mapboxToken);
+  return own || BUILD_MAPBOX_TOKEN;
+}

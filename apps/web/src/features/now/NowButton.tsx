@@ -218,7 +218,7 @@ export function NowButton({
       onClick={openSheet}
       aria-haspopup="dialog"
       className={[
-        "inline-flex min-h-13 select-none items-center gap-2 rounded-full bg-[linear-gradient(135deg,#C2410C,#EA580C)] px-5 text-[15px] font-bold text-white shadow-lift transition active:scale-95",
+        "inline-flex min-h-13 select-none items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--hero-via),var(--hero-to))] px-5 text-[15px] font-bold text-white shadow-lift transition active:scale-95",
         floating ? "fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-40" : "",
         className ?? "",
       ].join(" ")}
@@ -249,7 +249,7 @@ export function NowButton({
             >
               <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-surface-3 sm:hidden" aria-hidden />
               <div className="flex items-center gap-3 px-5 pb-3 pt-3 sm:pt-5">
-                <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[linear-gradient(135deg,#C2410C,#EA580C)] text-white">
+                <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--hero-via),var(--hero-to))] text-white">
                   <Sparkles className="size-5" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">

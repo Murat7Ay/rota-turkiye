@@ -1,7 +1,10 @@
 // Claude Messages API istemcisi — SDK yok, doğrudan fetch. Kullanıcının kendi anahtarıyla
-// ("kendi anahtarını getir") tarayıcıdan Anthropic'e gider; sunucu yoktur. Anahtar hiçbir
+// ("kendi anahtarını getir") tarayıcıdan Anthropic'e gider; sunucu yoktur. provider "openai"
+// seçilirse aynı istek OpenAI uyumlu bir uca (/chat/completions) çevrilir (bkz. openai.ts). Anahtar hiçbir
 // yere loglanmaz, hata mesajlarına da girmez. Her çağrı AiResult döner: hata fırlatılmaz,
 // çağıran taraf şablon metne düşebilir.
+
+import { callOpenAi, testOpenAiConnection } from "./openai";
 
 export const ANTHROPIC_API_BASE = "https://api.anthropic.com/v1";
 /** API sürümü (2026-10-21: temperature/top_p/top_k artık gönderilmez) */
@@ -147,9 +150,17 @@ const RETRYABLE = new Set<AiErrorCode>(["rate_limit", "overloaded", "server", "n
 
 // ---------------------------------------------------------------- seçenekler
 
+/** "anthropic": Claude Messages API; "openai": OpenAI uyumlu /chat/completions ucu */
+export type AiProvider = "anthropic" | "openai";
+
 /** Bütün AI fonksiyonlarının ortak seçenekleri */
 export interface AiCallOptions {
+  /** OpenAI uyumlu yerel sunucularda (Ollama, LM Studio …) boş olabilir */
   apiKey: string;
+  /** Varsayılan "anthropic" */
+  provider?: AiProvider;
+  /** provider "openai" için temel adres, ör. https://api.openai.com/v1 */
+  baseUrl?: string;
   /** Varsayılan DEFAULT_AI_MODEL */
   model?: string;
   /** Testler için; verilmezse global fetch */
@@ -216,6 +227,7 @@ export function buildMessagesRequest(p: CallClaudeParams): { url: string; header
 
 /** Claude Messages API çağrısı. Başarısızlıkta Türkçe mesajlı AiError döner, fırlatmaz. */
 export async function callClaude(p: CallClaudeParams): Promise<AiResult<ClaudeResponse>> {
+  if (p.provider === "openai") return callOpenAi(p);
   const keyErr = checkKey(p.apiKey);
   if (keyErr) return keyErr;
   const { url, headers, body } = buildMessagesRequest(p);
@@ -233,6 +245,7 @@ export async function callClaude(p: CallClaudeParams): Promise<AiResult<ClaudeRe
  * Anahtarı ve model erişimini sınar. GET /v1/models/{model} kullanır: jeton harcamaz.
  */
 export async function testConnection(opts: AiCallOptions): Promise<AiResult<{ model: string; displayName?: string }>> {
+  if (opts.provider === "openai") return testOpenAiConnection(opts);
   const keyErr = checkKey(opts.apiKey);
   if (keyErr) return keyErr;
   const model = opts.model || DEFAULT_AI_MODEL;
@@ -254,8 +267,14 @@ export async function testConnection(opts: AiCallOptions): Promise<AiResult<{ mo
   return aiOk(typeof v?.display_name === "string" ? { model: id, displayName: v.display_name } : { model: id });
 }
 
-function checkKey(apiKey: string | undefined): AiResult<never> | null {
+/** Sağlayıcının kullanıcıya gösterilen adı (hata mesajlarında) */
+export function providerName(opts: Pick<AiCallOptions, "provider">): string {
+  return opts.provider === "openai" ? "Yapay zekâ sunucusu" : "Anthropic";
+}
+
+export function checkKey(apiKey: string | undefined, optional = false): AiResult<never> | null {
   const k = (apiKey ?? "").trim();
+  if (!k && optional) return null;
   if (!k) return aiFail("no_key", "Önce Ayarlar'dan kendi Anthropic API anahtarını ekle.");
   // Başlığa konamayan karakterler fetch'te "ağ hatası" gibi görünür; önceden yakala
   if (!/^[\x21-\x7e]+$/.test(k)) return aiFail("invalid_key", "API anahtarı geçersiz karakter içeriyor. Anahtarı yeniden yapıştır.");
@@ -263,7 +282,8 @@ function checkKey(apiKey: string | undefined): AiResult<never> | null {
 }
 
 /** Zaman aşımı + kullanıcı iptali + HTTP hata eşlemesi; gövde JSON olarak döner */
-async function requestJson(url: string, init: RequestInit, opts: AiCallOptions): Promise<AiResult<unknown>> {
+export async function requestJson(url: string, init: RequestInit, opts: AiCallOptions): Promise<AiResult<unknown>> {
+  const name = providerName(opts);
   const fetchFn = opts.fetchFn ?? ((input: RequestInfo | URL, i?: RequestInit) => fetch(input, i));
   const ctl = new AbortController();
   let timedOut = false;
@@ -281,17 +301,17 @@ async function requestJson(url: string, init: RequestInit, opts: AiCallOptions):
     try {
       res = await fetchFn(url, { ...init, signal: ctl.signal });
     } catch {
-      return transportError(timedOut, opts.signal);
+      return transportError(timedOut, opts.signal, name);
     }
     let data: unknown = null;
     try {
       const text = await res.text();
       data = text ? JSON.parse(text) : null;
     } catch {
-      if (timedOut || opts.signal?.aborted) return transportError(timedOut, opts.signal);
+      if (timedOut || opts.signal?.aborted) return transportError(timedOut, opts.signal, name);
       data = null;
     }
-    if (!res.ok) return httpError(res.status, data, res.headers);
+    if (!res.ok) return httpError(res.status, data, res.headers, name);
     return aiOk(data);
   } finally {
     clearTimeout(timer);
@@ -299,8 +319,8 @@ async function requestJson(url: string, init: RequestInit, opts: AiCallOptions):
   }
 }
 
-function transportError(timedOut: boolean, signal?: AbortSignal): AiResult<never> {
-  if (timedOut) return aiFail("timeout", "Anthropic zamanında yanıt vermedi. Biraz sonra yeniden dene.");
+function transportError(timedOut: boolean, signal: AbortSignal | undefined, name: string): AiResult<never> {
+  if (timedOut) return aiFail("timeout", `${name} zamanında yanıt vermedi. Biraz sonra yeniden dene.`);
   if (signal?.aborted) return aiFail("aborted", "İstek iptal edildi.");
   const nav = (globalThis as { navigator?: { onLine?: boolean } }).navigator;
   if (nav && nav.onLine === false) {
@@ -308,20 +328,22 @@ function transportError(timedOut: boolean, signal?: AbortSignal): AiResult<never
       retryable: true,
     });
   }
-  return aiFail("network", "Anthropic'e ulaşılamadı (ağ hatası). Bağlantını kontrol edip yeniden dene.");
+  return aiFail("network", `${name} ile bağlantı kurulamadı (ağ ya da CORS hatası). Adresi ve bağlantını kontrol edip yeniden dene.`);
 }
 
 /** HTTP durum kodunu Türkçe hata mesajına çevirir */
-export function httpError(status: number, data: unknown, headers?: { get(name: string): string | null }): AiResult<never> {
-  const err = (data as { error?: { type?: unknown; message?: unknown } } | null)?.error;
-  const apiMsg = typeof err?.message === "string" ? err.message : "";
+export function httpError(status: number, data: unknown, headers?: { get(name: string): string | null }, name = "Anthropic"): AiResult<never> {
+  const err = (data as { error?: { type?: unknown; message?: unknown } | string } | null)?.error;
+  const apiMsg = typeof err === "string" ? err : typeof err?.message === "string" ? err.message : "";
   const shortMsg = apiMsg ? ` (${apiMsg.slice(0, 160)})` : "";
   const ra = Number(headers?.get("retry-after"));
   const retryAfterSec = Number.isFinite(ra) && ra > 0 ? Math.ceil(ra) : undefined;
   const extra = { status, ...(retryAfterSec ? { retryAfterSec } : {}) };
 
-  if (/credit balance|billing/i.test(apiMsg)) {
-    return aiFail("billing", "Anthropic hesabında yeterli kredi yok. console.anthropic.com üzerinden bakiye ekleyebilirsin.", extra);
+  if (/credit balance|billing|insufficient_quota|exceeded your current quota/i.test(apiMsg)) {
+    return name === "Anthropic"
+      ? aiFail("billing", "Anthropic hesabında yeterli kredi yok. console.anthropic.com üzerinden bakiye ekleyebilirsin.", extra)
+      : aiFail("billing", "Yapay zekâ hesabında yeterli kredi ya da kota yok.", extra);
   }
   switch (status) {
     case 401:
@@ -342,9 +364,9 @@ export function httpError(status: number, data: unknown, headers?: { get(name: s
       );
     case 503:
     case 529:
-      return aiFail("overloaded", "Anthropic şu anda çok yoğun. Birkaç dakika sonra yeniden dene.", extra);
+      return aiFail("overloaded", `${name} şu anda çok yoğun. Birkaç dakika sonra yeniden dene.`, extra);
     default:
-      if (status >= 500) return aiFail("server", `Anthropic tarafında bir sorun oluştu (${status}). Biraz sonra yeniden dene.`, extra);
+      if (status >= 500) return aiFail("server", `${name} tarafında bir sorun oluştu (${status}). Biraz sonra yeniden dene.`, extra);
       return aiFail("bad_request", `İstek kabul edilmedi (${status})${shortMsg}.`, extra);
   }
 }

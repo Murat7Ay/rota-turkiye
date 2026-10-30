@@ -49,7 +49,7 @@ function WarningCard({ w, onDismiss }: { w: AreaWarning; onDismiss: () => void }
           <Icon className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             {WARNING_KIND_LABEL[w.kind]} · {w.areas.map((a) => a.name).join(", ")}
           </p>
           <h3 className="font-bold leading-snug text-ink">{w.title}</h3>

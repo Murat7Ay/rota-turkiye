@@ -13,7 +13,7 @@ const VARIANTS: Record<Variant, string> = {
   secondary: "bg-surface text-ink border border-line hover:bg-surface-2",
   ghost: "text-ink-2 hover:bg-surface-2",
   danger: "bg-bad-soft text-bad hover:brightness-95",
-  sea: "bg-sea text-white hover:brightness-110 shadow-sm",
+  sea: "bg-sea text-brand-ink hover:brightness-110 shadow-sm",
 };
 
 export function Button({
@@ -281,8 +281,9 @@ export function Bar({ value, max, tone = "brand", className, label }: { value: n
 
 export function PageHeader({ title, subtitle, action, eyebrow }: { title: ReactNode; subtitle?: ReactNode; action?: ReactNode; eyebrow?: ReactNode }) {
   return (
-    <header className="flex items-start justify-between gap-3 px-4 pb-3 pt-5 sm:px-6 lg:pt-8">
-      <div className="min-w-0">
+    <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-3 px-4 pb-3 pt-5 sm:px-6 lg:pt-8">
+      {/* Başlık en az ~16rem yer bulamazsa eylemler alt satıra iner (dar ekranda başlık sıkışmaz) */}
+      <div className="min-w-0 flex-[1_1_16rem]">
         {eyebrow && <div className="mb-1 text-[13px] font-semibold text-brand">{eyebrow}</div>}
         <h1 className="text-[26px] font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-1 text-[15px] text-muted">{subtitle}</p>}

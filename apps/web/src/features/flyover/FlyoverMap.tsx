@@ -163,7 +163,9 @@ export default function FlyoverMap({ day, places, color, autoPlay, onChromeHidde
 
   return (
     <div ref={wrap} className={cx("relative h-full w-full overflow-hidden bg-surface-2", className)}>
-      <div ref={el} className="absolute inset-0" />
+      <div className="absolute inset-0">
+        <div ref={el} className="h-full w-full" />
+      </div>
       {failed ? (
         <div className="absolute inset-0 grid place-items-center p-6 text-center">
           <div>
