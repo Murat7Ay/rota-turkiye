@@ -129,4 +129,30 @@ describe("OpenAI uyumlu uç", () => {
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.value.request.stays[0]!.id).toBe("selcuk");
   });
+
+  it("resmî OpenAI + gpt-5: max_completion_tokens ve reasoning_effort baştan gönderilir", async () => {
+    const { fetchFn, calls } = seqFetch([200, completion({ content: "ok" })]);
+    const res = await callClaude({ ...base, provider: "openai", baseUrl: "https://api.openai.com/v1", apiKey: "sk-x", model: "gpt-5-mini", effort: "medium", fetchFn });
+    expect(res.ok).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.body).toMatchObject({ max_completion_tokens: 4050, reasoning_effort: "medium" });
+    expect(calls[0]!.body).not.toHaveProperty("max_tokens");
+  });
+
+  it("resmî OpenAI + düşünmeyen model: reasoning_effort yok, ek bütçe yok", async () => {
+    const { fetchFn, calls } = seqFetch([200, completion({ content: "ok" })]);
+    await callClaude({ ...base, provider: "openai", baseUrl: "https://api.openai.com/v1/", apiKey: "sk-x", model: "gpt-4.1-mini", fetchFn });
+    expect(calls[0]!.body).toMatchObject({ max_completion_tokens: 50 });
+    expect(calls[0]!.body).not.toHaveProperty("reasoning_effort");
+  });
+
+  it("reasoning_effort reddedilirse çıkarılıp yeniden denenir", async () => {
+    const { fetchFn, calls } = seqFetch(
+      [400, { error: { message: "Unrecognized request argument supplied: reasoning_effort" } }],
+      [200, completion({ content: "ok" })],
+    );
+    const res = await callClaude({ ...base, provider: "openai", baseUrl: "https://api.openai.com/v1", apiKey: "sk-x", model: "o4-mini", fetchFn });
+    expect(res.ok).toBe(true);
+    expect(calls[1]!.body).not.toHaveProperty("reasoning_effort");
+  });
 });

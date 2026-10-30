@@ -102,14 +102,33 @@ export function toOpenAiMessages(system: string, messages: CallClaudeParams["mes
   return out;
 }
 
+/** Resmî OpenAI ucu mu (api.openai.com): parametreleri baştan doğru gönderebiliriz */
+export function isOfficialOpenAi(baseUrl: string | undefined): boolean {
+  return /^https:\/\/api\.openai\.com(\/|$)/i.test(normalizeBaseUrl(baseUrl));
+}
+
+/** Akıl yürüten OpenAI modelleri (gpt-5 ailesi, o-serisi): reasoning_effort alır, max_tokens'ı reddeder */
+export function isOpenAiReasoningModel(model: string | undefined): boolean {
+  return /^(gpt-5|o\d)/i.test((model ?? "").trim());
+}
+
+/** Akıl yürütme jetonları yanıt bütçesinden düşer; görünür metne yer kalsın diye bütçe büyütülür */
+const REASONING_HEADROOM = 4000;
+
 /** Chat Completions isteğinin gövdesi (testte de kullanılır) */
 export function buildChatRequest(p: CallClaudeParams): { url: string; headers: Record<string, string>; body: Record<string, unknown> } {
+  const official = isOfficialOpenAi(p.baseUrl);
+  const reasoning = official && isOpenAiReasoningModel(p.model);
+  const maxTokens = Math.max(1, Math.floor(p.maxTokens)) + (reasoning ? REASONING_HEADROOM : 0);
   const body: Record<string, unknown> = {
     model: (p.model ?? "").trim(),
     // Şema istemde de verilir: json_schema'yı desteklemeyen uçlar düz metne düştüğünde bile biçim bilinsin
     messages: toOpenAiMessages(p.jsonSchema ? `${p.system}\n\nYanıtın, şu JSON şemasına uyan tek bir JSON nesnesi olmalı:\n${JSON.stringify(p.jsonSchema)}` : p.system, p.messages),
-    max_tokens: Math.max(1, Math.floor(p.maxTokens)),
+    // OpenAI'nin kendisi max_completion_tokens ister; diğer uyumlu sunucuların çoğu yalnız max_tokens tanır
+    ...(official ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
   };
+  // Kısa işlerde (anlatım, sohbet) gereksiz uzun düşünmesin; ayrıştırma "medium" ister
+  if (reasoning) body.reasoning_effort = p.effort ?? "low";
   if (p.tools?.length) {
     body.tools = p.tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }));
     if (p.toolChoice) body.tool_choice = toolChoice(p.toolChoice);
@@ -175,7 +194,9 @@ export async function callOpenAi(p: CallClaudeParams): Promise<AiResult<ClaudeRe
   for (let attempt = 0; attempt < 3 && !res.ok && res.error.code === "bad_request"; attempt++) {
     const m = res.error.message;
     const rf = body.response_format as { type?: string } | undefined;
-    if (/max_tokens/i.test(m) && "max_tokens" in body) {
+    if (/reasoning_effort/i.test(m) && "reasoning_effort" in body) {
+      delete body.reasoning_effort;
+    } else if (/max_tokens/i.test(m) && "max_tokens" in body) {
       body.max_completion_tokens = body.max_tokens;
       delete body.max_tokens;
     } else if (rf?.type === "json_schema" && /response_format|json_schema|schema/i.test(m)) {
