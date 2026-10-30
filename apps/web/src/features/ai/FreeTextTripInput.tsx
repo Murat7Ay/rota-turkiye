@@ -101,7 +101,7 @@ export function FreeTextTripInput({ pack, defaults, today, onApply, onOpenSettin
         className="w-full resize-y rounded-2xl border border-line bg-bg p-3.5 text-[15px] leading-relaxed text-ink outline-none placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60"
       />
 
-      {loaded && !hasKey && <NoKeyHint onOpenSettings={onOpenSettings}>Serbest metinle gezi kurmak için Ayarlar'dan kendi Anthropic API anahtarını ekle. Formu elle doldurmak her zaman mümkün.</NoKeyHint>}
+      {loaded && !hasKey && <NoKeyHint onOpenSettings={onOpenSettings}>Serbest metinle gezi kurmak için Ayarlar'dan yapay zekâ bağlantını kur (Anthropic ya da OpenAI uyumlu). Formu elle doldurmak her zaman mümkün.</NoKeyHint>}
       {hasKey && !pack && <NoKeyHint>Önce bir bölge paketi seç; yer adları o paketteki yerleşimlere eşlenir.</NoKeyHint>}
 
       <div className="flex flex-wrap items-center gap-2">

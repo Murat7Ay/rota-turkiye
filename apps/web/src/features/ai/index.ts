@@ -1,4 +1,4 @@
-// İsteğe bağlı yapay zekâ özellikleri (kendi Anthropic anahtarınla). Uygulama bunlarsız tam çalışır.
+// İsteğe bağlı yapay zekâ özellikleri (kendi Anthropic anahtarınla ya da OpenAI uyumlu bir uçla). Uygulama bunlarsız tam çalışır.
 export { AiSettingsCard } from "./AiSettingsCard";
 export { FreeTextTripInput, type FreeTextTripInputProps } from "./FreeTextTripInput";
 export { GuideChat, type GuideChatProps } from "./GuideChat";

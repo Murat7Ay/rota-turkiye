@@ -19,7 +19,7 @@ export interface NarrationButtonProps {
 
 export function NarrationButton({ briefing, hideWhenNoKey = true, className }: NarrationButtonProps) {
   const { hasKey, callOptions, config } = useAiConfig();
-  const key = `${config.model}|${JSON.stringify(briefingPayload(briefing))}`;
+  const key = `${config.provider === "openai" ? `${config.oaBaseUrl}|${config.oaModel}` : config.model}|${JSON.stringify(briefingPayload(briefing))}`;
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AiError | null>(null);
@@ -90,7 +90,7 @@ export function NarrationButton({ briefing, hideWhenNoKey = true, className }: N
           icon={<Sparkles className="size-4 text-brand" aria-hidden />}
           loading={loading}
           disabled={!hasKey}
-          title={hasKey ? undefined : "Ayarlar'dan API anahtarı ekle"}
+          title={hasKey ? undefined : "Ayarlar'dan yapay zekâ bağlantını kur"}
           onClick={() => void narrate()}
         >
           {loading ? "Rehber hazırlanıyor…" : "Rehber gibi anlat"}

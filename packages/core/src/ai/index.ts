@@ -6,3 +6,4 @@ export * from "./resolve";
 export * from "./parseRequest";
 export * from "./narrate";
 export * from "./context";
+export * from "./openai";

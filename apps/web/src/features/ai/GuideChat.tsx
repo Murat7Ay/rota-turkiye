@@ -80,7 +80,7 @@ export function GuideChat({ context, title = "Rehbere sor", suggestions = DEFAUL
       </header>
 
       {loaded && !hasKey ? (
-        <NoKeyHint onOpenSettings={onOpenSettings}>Rehbere soru sormak için Ayarlar'dan kendi Anthropic API anahtarını ekle.</NoKeyHint>
+        <NoKeyHint onOpenSettings={onOpenSettings}>Rehbere soru sormak için Ayarlar'dan yapay zekâ bağlantını kur (Anthropic ya da OpenAI uyumlu).</NoKeyHint>
       ) : (
         <>
           <div ref={listRef} className="max-h-80 space-y-2 overflow-y-auto overscroll-contain" aria-live="polite">

@@ -51,7 +51,7 @@ export function NoKeyHint({ onOpenSettings, children }: { onOpenSettings?: () =>
     <div className="flex items-start gap-2.5 rounded-2xl bg-surface-2 p-3 text-sm text-ink-2">
       <KeyRound className="mt-0.5 size-4 shrink-0 text-muted" aria-hidden />
       <p>
-        {children ?? "Bu özellik için Ayarlar'dan kendi Anthropic API anahtarını ekle. Uygulamanın geri kalanı anahtarsız da tam çalışır."}
+        {children ?? "Bu özellik için Ayarlar'dan yapay zekâ bağlantını kur (Anthropic ya da OpenAI uyumlu). Uygulamanın geri kalanı anahtarsız da tam çalışır."}
         {onOpenSettings && (
           <>
             {" "}
