@@ -4,7 +4,7 @@
 
 🌐 Canlı: https://murat7ay.github.io/rota-turkiye/
 
-> **English:** Rota Türkiye is an open-source, offline-first trip planner for Türkiye. It builds day-by-day plans (breakfast, lunch, tea, shopping, dinner, hotel) with a constraint solver, repairs them in place when things go wrong, notifies you (optionally by voice) about notable places just off your route, and tracks your budget against the plan. Everything runs in the browser — no backend, no ads, no accounts. Optional AI features use your own Claude API key directly from the browser.
+> **English:** Rota Türkiye is an open-source, offline-first trip planner for Türkiye. It builds day-by-day plans (breakfast, lunch, tea, shopping, dinner, hotel) with a constraint solver, repairs them in place when things go wrong, notifies you (optionally by voice) about notable places just off your route, and tracks your budget against the plan. Everything runs in the browser — no backend, no ads, no accounts. Optional AI features use your own Claude API key — or any OpenAI-compatible endpoint (OpenAI, OpenRouter, Groq, Ollama, LM Studio) — directly from the browser.
 
 ## Özellikler
 
@@ -38,7 +38,7 @@
 | **Türkiye Pasaportu** | Damgalar (Çay Ustası, Antik Kent Avcısı, Esnaf Lokantası Müdavimi…) ve 81 il haritası. |
 
 ### İsteğe bağlı yapay zekâ (kendi anahtarınla)
-"Kasımda 4 gün Ege, Selçuk'ta 2 gece…" gibi serbest metinden gezi isteği, sabah rehberini rehber ağzından anlatma ve "Rehbere sor". **LLM önerir, çözücü karar verir:** saatleri ve sırayı her zaman çözücü üretir; yapay zekâ yalnızca isteği anlar ve anlatır. Anahtar yalnızca cihazda saklanır, istekler doğrudan Anthropic'e gider.
+"Kasımda 4 gün Ege, Selçuk'ta 2 gece…" gibi serbest metinden gezi isteği, sabah rehberini rehber ağzından anlatma ve "Rehbere sor". **LLM önerir, çözücü karar verir:** saatleri ve sırayı her zaman çözücü üretir; yapay zekâ yalnızca isteği anlar ve anlatır. Sağlayıcı olarak Anthropic ya da OpenAI uyumlu herhangi bir uç (OpenAI, OpenRouter, Groq, yerel Ollama / LM Studio) seçilebilir. Anahtar yalnızca cihazda saklanır, istekler doğrudan seçilen sağlayıcıya gider.
 
 ## Mimari
 
