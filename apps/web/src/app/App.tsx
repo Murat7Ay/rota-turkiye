@@ -1,7 +1,7 @@
 // Uygulama kabuğu: hidrasyon, yönlendirme, alt sekme çubuğu (mobil) / yan ray (masaüstü),
 // bildirim kartları, canlı mod motoru ve ekran bazlı hata sınırları.
 import { Suspense, lazy, useEffect, useState, type ReactNode } from "react";
-import { BookOpen, CalendarDays, Map as MapIcon, Orbit, Plus, Settings as SettingsIcon, Sunrise, Wallet, WifiOff } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronRight, Ellipsis, Map as MapIcon, Orbit, Plus, Settings as SettingsIcon, Sunrise, Wallet, WifiOff } from "lucide-react";
 import type { SharePayload } from "@rota/core";
 import { SharedPlanLoader } from "../features/share";
 import { planTrip } from "../lib/core";
@@ -9,6 +9,7 @@ import { toast } from "../state/ui";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { LiveEngine } from "./LiveEngine";
 import { navigate, useRoute, type Route } from "./router";
+import { Sheet } from "../components/Sheet";
 import { Toasts } from "../components/Toasts";
 import { Spinner, cx } from "../components/ui";
 import CreateTrip from "../screens/CreateTrip";
@@ -33,6 +34,14 @@ const TABS: Array<{ route: Route; label: string; icon: ReactNode }> = [
   { route: "ayarlar", label: "Ayarlar", icon: <SettingsIcon className="size-[22px]" aria-hidden /> },
 ];
 
+/** Mobil alt çubukta yer alan sekmeler; kalanlar "Daha" sayfasında */
+const MOBILE_TABS: Route[] = ["bugun", "plan", "etrafim", "butce"];
+const MORE: Array<{ route: Route; label: string; hint: string; icon: ReactNode }> = [
+  { route: "olustur", label: "Yeni gezi", hint: "Başka bir rota planla", icon: <Plus className="size-5" aria-hidden /> },
+  { route: "pasaport", label: "Pasaport", hint: "Damgalar, 81 il haritası, Gezi Wrapped", icon: <BookOpen className="size-5" aria-hidden /> },
+  { route: "ayarlar", label: "Ayarlar", hint: "Yapay zekâ, ses, çevrimdışı paket, bildirimler", icon: <SettingsIcon className="size-5" aria-hidden /> },
+];
+
 /** Paylaşılan link (#/paylas/…): paketi yükler, aynı istek + tohumla planı yeniden kurar */
 async function openSharedPlan(p: SharePayload) {
   const pack = await usePack.getState().ensurePack(p.packId);
@@ -53,7 +62,7 @@ function Logo({ compact }: { compact?: boolean }) {
       {!compact && (
         <span className="leading-tight">
           <span className="block text-[17px] font-extrabold tracking-tight text-ink">Rota Türkiye</span>
-          <span className="block text-[11px] font-semibold text-muted">çevrimdışı gezi rehberi</span>
+          <span className="block text-xs font-semibold text-muted">çevrimdışı gezi rehberi</span>
         </span>
       )}
     </span>
@@ -128,6 +137,9 @@ export default function App() {
   const ensurePack = usePack((s) => s.ensurePack);
   const route = useRoute();
   const online = useOnline();
+  const [moreOpen, setMoreOpen] = useState(false);
+  // Geri tuşu ya da bağlantıyla rota değişirse "Daha" sayfası açık kalmasın
+  useEffect(() => setMoreOpen(false), [route]);
   const ready = tripHydrated && settingsHydrated;
 
   // İlk açılış: plan yoksa oluşturma ekranı
@@ -227,15 +239,15 @@ export default function App() {
 
       {/* ------------------------------------------------ alt sekmeler (mobil) */}
       <nav aria-label="Ana gezinme" className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/92 backdrop-blur-lg lg:hidden">
-        <ul className="mx-auto grid h-16 max-w-xl grid-cols-6">
-          {TABS.map((t) => {
-            const active = route === t.route || (t.route === "bugun" && route === "olustur");
+        <ul className="mx-auto grid h-16 max-w-xl grid-cols-5">
+          {TABS.filter((t) => MOBILE_TABS.includes(t.route)).map((t) => {
+            const active = route === t.route;
             return (
               <li key={t.route}>
                 <a
                   href={`#/${t.route}`}
-                  aria-current={route === t.route ? "page" : undefined}
-                  className={cx("flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition", active ? "text-brand" : "text-muted")}
+                  aria-current={active ? "page" : undefined}
+                  className={cx("flex h-full flex-col items-center justify-center gap-0.5 text-xs font-semibold transition", active ? "text-brand" : "text-muted")}
                 >
                   <span className={cx("grid h-7 w-12 place-items-center rounded-full transition", active && "bg-brand-soft")}>{t.icon}</span>
                   {t.label}
@@ -243,8 +255,57 @@ export default function App() {
               </li>
             );
           })}
+          <li>
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-haspopup="dialog"
+              className={cx(
+                "flex h-full w-full flex-col items-center justify-center gap-0.5 text-xs font-semibold transition",
+                MORE.some((m) => m.route === route) ? "text-brand" : "text-muted",
+              )}
+            >
+              <span className={cx("grid h-7 w-12 place-items-center rounded-full transition", MORE.some((m) => m.route === route) && "bg-brand-soft")}>
+                <Ellipsis className="size-[22px]" aria-hidden />
+              </span>
+              Daha
+            </button>
+          </li>
         </ul>
       </nav>
+
+      <Sheet open={moreOpen} onClose={() => setMoreOpen(false)} title="Daha fazlası">
+        <ul className="space-y-1.5 pb-2">
+          {MORE.map((m) => (
+            <li key={m.route}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoreOpen(false);
+                  navigate(m.route);
+                }}
+                aria-current={route === m.route ? "page" : undefined}
+                className={cx(
+                  "flex min-h-14 w-full items-center gap-3 rounded-2xl px-3 text-left transition",
+                  route === m.route ? "bg-brand-soft text-brand" : "hover:bg-surface-2",
+                )}
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-surface-2 text-ink-2">{m.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-ink">{m.label}</span>
+                  <span className="block text-sm text-muted">{m.hint}</span>
+                </span>
+                <ChevronRight className="size-5 text-muted" aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+        {!online && (
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-warn-soft px-2.5 py-1 text-xs font-semibold text-warn">
+            <WifiOff className="size-3.5" aria-hidden /> Çevrimdışı
+          </p>
+        )}
+      </Sheet>
 
       <LivePill />
       <SharedPlanLoader onOpen={openSharedPlan} currentPackId={planPack ?? null} hasCurrentPlan={hasPlan} />

@@ -25,6 +25,12 @@
   --bad: #b91c1c;
   --bad-soft: #fde8e8;
   --shadow: 28 25 23;
+  /* Sabah rehberi kartı ve öne çıkan düğmeler için kiremit gradyanı */
+  --hero-from: #9a3412;
+  --hero-via: #c2410c;
+  --hero-to: #ea580c;
+  --marker-dark: #1c1917;
+  --marker-on-dark: #ffffff;
   color-scheme: light;
 }
 
@@ -51,6 +57,11 @@
     --bad: #f87171;
     --bad-soft: #3b1717;
     --shadow: 0 0 0;
+    --hero-from: #7c2d12;
+    --hero-via: #9a3412;
+    --hero-to: #c2410c;
+    --marker-dark: #f5f0ea;
+    --marker-on-dark: #1c1917;
     color-scheme: dark;
   }
 }
@@ -174,6 +185,22 @@ input[type="time"] {
   padding-top: env(safe-area-inset-top);
 }
 
+.brief-card {
+  background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-via) 45%, var(--hero-to) 100%);
+}
+
+/* Hareketi azalt tercihi: kayan alt sayfalar, açılış animasyonları ve geçişler kısalır */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Aralık kaydırıcısı */
 input[type="range"].range {
   -webkit-appearance: none;
@@ -285,10 +312,10 @@ input[type="range"].range::-moz-range-thumb {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: #1c1917;
-  color: #fff;
+  background: var(--marker-dark);
+  color: var(--marker-on-dark);
   font-size: 17px;
-  border: 2px solid #fff;
+  border: 2px solid var(--surface);
   box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.4);
 }
 
@@ -306,8 +333,8 @@ input[type="range"].range::-moz-range-thumb {
   border-radius: 50%;
 }
 .you-dot::after {
-  background: #0e7490;
-  border: 3px solid #fff;
+  background: var(--sea);
+  border: 3px solid var(--surface);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
 }
 .you-dot::before {
@@ -352,14 +379,14 @@ input[type="range"].range::-moz-range-thumb {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   font-size: 18px;
-  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.45), 0 0 0 2px var(--pin, #c2410c);
+  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.45), 0 0 0 2px var(--pin, var(--brand));
 }
 .poi-pin .poi-stem {
   width: 2px;
   height: 14px;
-  background: linear-gradient(var(--pin, #c2410c), transparent);
+  background: linear-gradient(var(--pin, var(--brand)), transparent);
 }
 .poi-pin[data-active="true"] {
   transform: scale(1.25) translateY(-4px);

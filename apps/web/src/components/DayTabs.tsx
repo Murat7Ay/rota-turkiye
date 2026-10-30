@@ -31,7 +31,7 @@ export function DayTabs({ days, value, onChange, todayDate }: { days: DayPlan[];
             <span className="flex items-center gap-1.5 text-[13px] font-bold">
               <span className="size-2.5 rounded-full" style={{ background: dayColorCss(i) }} aria-hidden />
               {i + 1}. gün
-              {today && <span className={cx("rounded-full px-1.5 text-[10px] font-bold", active ? "bg-brand text-white" : "bg-brand-soft text-brand")}>BUGÜN</span>}
+              {today && <span className={cx("rounded-full px-1.5 text-xs font-bold", active ? "bg-brand text-white" : "bg-brand-soft text-brand")}>Bugün</span>}
             </span>
             <span className={cx("text-xs", active ? "opacity-75" : "text-muted")}>
               {fmtWeekdayShort(d.date)} {fmtDateShort(d.date)} · {d.isTravelDay ? "yol" : d.to.name.split(" ")[0]}

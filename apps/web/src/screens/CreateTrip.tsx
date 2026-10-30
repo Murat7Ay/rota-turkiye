@@ -1,9 +1,10 @@
 // Gezi oluştur: bölge paketi, rota (başlangıç + geceleme üsleri), zaman, tercihler, bütçe.
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
   Bus,
+  ChevronRight,
   Car,
   CircleAlert,
   Database,
@@ -58,6 +59,53 @@ const LOADING_LINES = [
   "Bütçeye göre seçenekler tartılıyor…",
 ];
 
+type ProblemField = "bolge" | "baslangic" | "konaklama" | "zaman" | "butce";
+interface Problem {
+  field: ProblemField;
+  /** Eylem çubuğundaki özet için */
+  short: string;
+  text: string;
+}
+
+function FieldError({ text }: { text?: string }) {
+  if (!text) return null;
+  return (
+    <span role="alert" className="flex items-center gap-1.5 text-sm font-semibold text-bad">
+      <CircleAlert className="size-4 shrink-0" aria-hidden /> {text}
+    </span>
+  );
+}
+
+/** İlk açılış: üç adımda ne olacağı ve tek dokunuşla örnek plan */
+function Welcome({ onSample }: { onSample: () => void }) {
+  const steps = [
+    { n: 1, t: "Bölgeni seç", d: "Ege, Kapadokya ya da İstanbul" },
+    { n: 2, t: "Nerede kalacağını söyle", d: "ya da klasik rotayı tek dokunuşla al" },
+    { n: 3, t: "Her sabah rehberin hazır", d: "kahvaltıdan otele, çevrimdışı" },
+  ];
+  return (
+    <section aria-label="Nasıl çalışır" className="rounded-3xl border border-line bg-surface p-4 shadow-card sm:p-5">
+      <ol className="grid gap-3 sm:grid-cols-3">
+        {steps.map((s) => (
+          <li key={s.n} className="flex items-start gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-brand-ink">{s.n}</span>
+            <span className="min-w-0">
+              <span className="block text-[15px] font-bold leading-snug text-ink">{s.t}</span>
+              <span className="block text-sm text-muted">{s.d}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+        <span className="min-w-0 flex-1 text-sm text-muted">Önce nasıl göründüğüne bakmak ister misin?</span>
+        <Button size="sm" icon={<Sparkles className="size-4" />} onClick={onSample}>
+          Örnek planı gör
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 function PackCard({ meta, selected, onSelect }: { meta: PackMeta; selected: boolean; onSelect: () => void }) {
   return (
     <button
@@ -106,6 +154,9 @@ export default function CreateTrip() {
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // İlk "Planı oluştur" denemesinden sonra eksikler alanların yanında da gösterilir
+  const [attempted, setAttempted] = useState(false);
+  const sectionRefs = useRef<Partial<Record<ProblemField, HTMLElement | null>>>({});
 
   useEffect(() => {
     void loadList();
@@ -137,13 +188,14 @@ export default function CreateTrip() {
   const days = nights + (draft.end ? 1 : 0);
   const perPersonDay = days > 0 ? draft.budgetTry / days / Math.max(1, draft.travelers) : 0;
 
-  const problems: string[] = [];
-  if (!draft.packId) problems.push("Bir bölge seç.");
-  if (!draft.start) problems.push("Başlangıç noktasını seç.");
-  if (draft.stays.length === 0) problems.push("En az bir geceleme yeri ekle.");
-  if (draft.stays.some((s) => s.nights < 1)) problems.push("Her konaklama en az 1 gece olmalı.");
-  if (draft.budgetTry <= 0) problems.push("Bütçe gir.");
-  if (draft.dayStart >= draft.dayEnd) problems.push("Gün bitişi başlangıçtan sonra olmalı.");
+  const problems: Problem[] = [];
+  if (!draft.packId) problems.push({ field: "bolge", short: "bölge", text: "Bir bölge seç." });
+  if (!draft.start) problems.push({ field: "baslangic", short: "başlangıç noktası", text: "Başlangıç noktasını seç." });
+  if (draft.stays.length === 0) problems.push({ field: "konaklama", short: "konaklama", text: "En az bir geceleme yeri ekle." });
+  if (draft.stays.some((s) => s.nights < 1)) problems.push({ field: "konaklama", short: "gece sayısı", text: "Her konaklama en az 1 gece olmalı." });
+  if (draft.dayStart >= draft.dayEnd) problems.push({ field: "zaman", short: "gün saatleri", text: "Gün bitişi başlangıçtan sonra olmalı." });
+  if (draft.budgetTry <= 0) problems.push({ field: "butce", short: "bütçe", text: "Bütçe gir." });
+  const problemFor = (f: ProblemField) => (attempted ? problems.find((p) => p.field === f)?.text : undefined);
 
   function addStay(t?: Town) {
     const town = t ?? towns.find((x) => !draft.stays.some((s) => s.id === x.id)) ?? towns[0];
@@ -183,7 +235,11 @@ export default function CreateTrip() {
   async function create() {
     setError(null);
     if (problems.length) {
-      setError(problems.join(" "));
+      setAttempted(true);
+      // İlk eksik alana kaydır; hata metni alanın yanında görünür
+      const el = sectionRefs.current[problems[0]!.field];
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.querySelector<HTMLElement>("button, input")?.focus({ preventScroll: true });
       return;
     }
     setBusy(true);
@@ -229,8 +285,8 @@ export default function CreateTrip() {
   async function useSample() {
     await ensurePack(SAMPLE_PACK_ID);
     const plan = makeSamplePlan(todayTr());
+    // Bugün ekranı zaten "örnek veri" uyarısı gösteriyor; ayrıca bildirim çıkarılmaz
     setPlan(plan, { sample: true });
-    toast({ kind: "info", title: "Örnek plan yüklendi", body: "Bu bir test verisidir; gerçek paketle kendi planını oluşturabilirsin." });
     navigate("bugun");
   }
 
@@ -249,6 +305,8 @@ export default function CreateTrip() {
       />
 
       <div className="mx-auto grid max-w-3xl gap-5 px-4 sm:px-6">
+        {!hasPlan && <Welcome onSample={useSample} />}
+
         {/* ------------------------------------------------ tek cümleyle (isteğe bağlı AI) */}
         <FreeTextTripInput
           pack={pack ?? null}
@@ -271,7 +329,7 @@ export default function CreateTrip() {
         />
 
         {/* ------------------------------------------------ bölge */}
-        <section className="space-y-2.5" aria-labelledby="sec-bolge">
+        <section className="space-y-2.5" aria-labelledby="sec-bolge" ref={(el) => void (sectionRefs.current.bolge = el)}>
           <SectionTitle>
             <span id="sec-bolge">1 · Bölge</span>
           </SectionTitle>
@@ -298,6 +356,25 @@ export default function CreateTrip() {
               <Spinner className="size-4" /> Paket indiriliyor…
             </div>
           )}
+          <FieldError text={problemFor("bolge")} />
+          {quick && draft.stays.length === 0 && (
+            <button
+              type="button"
+              onClick={fillQuick}
+              className="flex w-full items-center gap-3 rounded-2xl border border-sea/30 bg-sea-soft p-3.5 text-left transition hover:brightness-[0.98]"
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-sea text-white">
+                <WandSparkles className="size-5" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-ink">Klasik rotayla başla</span>
+                <span className="block text-sm text-sea">
+                  {quick.label} · {quick.stays.reduce((n, s) => n + s.nights, 0)} gece
+                </span>
+              </span>
+              <ChevronRight className="size-5 text-sea" aria-hidden />
+            </button>
+          )}
           {fellBack && draft.packId !== SAMPLE_PACK_ID && (
             <p className="rounded-xl bg-warn-soft px-3 py-2 text-sm text-warn">
               {packError} Şimdilik örnek veri gösteriliyor.
@@ -309,16 +386,18 @@ export default function CreateTrip() {
         <Card className="space-y-4 p-4 sm:p-5">
           <SectionTitle
             action={
-              quick && (
+              quick &&
+              draft.stays.length > 0 && (
                 <Button size="sm" variant="ghost" icon={<WandSparkles className="size-4" />} onClick={fillQuick}>
-                  {quick.label}
+                  Klasik rota
                 </Button>
               )
             }
           >
             2 · Rota
           </SectionTitle>
-          <Field label="Nereden başlıyorsun?">
+          <div ref={(el) => void (sectionRefs.current.baslangic = el)}>
+          <Field label="Nereden başlıyorsun?" hint={problemFor("baslangic") ? <FieldError text={problemFor("baslangic")} /> : undefined}>
             <TownPicker
               towns={towns}
               label="Başlangıç noktası"
@@ -327,8 +406,9 @@ export default function CreateTrip() {
               placeholder="Şehir ya da kasaba seç"
             />
           </Field>
+          </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" ref={(el) => void (sectionRefs.current.konaklama = el)}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-ink-2">Nerede kalacaksın?</span>
               <span className="text-xs text-muted">{nights} gece</span>
@@ -376,6 +456,7 @@ export default function CreateTrip() {
             <Button variant="secondary" icon={<Plus className="size-4" />} onClick={() => addStay()} disabled={!towns.length} className="w-full border-dashed">
               Konaklama ekle
             </Button>
+            <FieldError text={problemFor("konaklama")} />
           </div>
 
           <Toggle
@@ -390,7 +471,8 @@ export default function CreateTrip() {
         </Card>
 
         {/* ------------------------------------------------ zaman */}
-        <Card className="space-y-4 p-4 sm:p-5">
+        <section ref={(el) => void (sectionRefs.current.zaman = el)} className="rounded-3xl border border-line bg-surface p-4 shadow-card sm:p-5">
+          <div className="space-y-4">
           <SectionTitle>3 · Zaman</SectionTitle>
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Başlangıç tarihi" htmlFor="f-date">
@@ -408,7 +490,9 @@ export default function CreateTrip() {
               {days} gün: {fmtDateShort(draft.startDate)} – {fmtDateShort(addDays(draft.startDate, days - 1))}
             </p>
           )}
-        </Card>
+          <FieldError text={problemFor("zaman")} />
+          </div>
+        </section>
 
         {/* ------------------------------------------------ tercihler */}
         <Card className="space-y-4 p-4 sm:p-5">
@@ -446,7 +530,7 @@ export default function CreateTrip() {
         </Card>
 
         {/* ------------------------------------------------ bütçe */}
-        <Card className="space-y-4 p-4 sm:p-5">
+        <section ref={(el) => void (sectionRefs.current.butce = el)} className="space-y-4 rounded-3xl border border-line bg-surface p-4 shadow-card sm:p-5">
           <SectionTitle>5 · Bütçe</SectionTitle>
           <Field
             label="Toplam bütçe (bütün yolcular, konaklama dahil)"
@@ -465,6 +549,7 @@ export default function CreateTrip() {
               <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 font-bold text-muted">₺</span>
             </div>
           </Field>
+          <FieldError text={problemFor("butce")} />
           <Field label="Ziyaretçi" hint="Müze biletleri yerli ve yabancı için farklı fiyatlanır.">
             <Segmented
               label="Ziyaretçi"
@@ -484,7 +569,7 @@ export default function CreateTrip() {
               description="Bakanlık müze ve ören yerleri ücretsiz hesaplanır."
             />
           )}
-        </Card>
+        </section>
 
         {error && (
           <div role="alert" className="flex gap-3 rounded-2xl border border-bad/30 bg-bad-soft p-4 text-bad">
@@ -512,10 +597,16 @@ export default function CreateTrip() {
             </Button>
           )}
         </div>
-        {busy && (
+        {busy ? (
           <p className="mx-auto mt-2 max-w-3xl text-center text-sm text-muted" aria-live="polite">
             {LOADING_LINES[line]}
           </p>
+        ) : (
+          problems.length > 0 && (
+            <p className={cx("mx-auto mt-2 max-w-3xl text-center text-sm", attempted ? "font-semibold text-bad" : "text-muted")} aria-live="polite">
+              Eksik: {[...new Set(problems.map((p) => p.short))].join(", ")}
+            </p>
+          )
         )}
       </div>
     </div>

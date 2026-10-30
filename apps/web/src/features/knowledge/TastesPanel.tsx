@@ -79,7 +79,7 @@ function TasteRow({ item }: { item: GiProduct }) {
           <span className="sr-only">(TÜRKPATENT kaydı, yeni sekmede açılır)</span>
         </a>
         {item.basis === "kayit" && (
-          <p className="mt-0.5 text-[11px] text-muted">Tanım yalnızca sicil kaydından; ayrıntılı belge okunamadı.</p>
+          <p className="mt-0.5 text-xs text-muted">Tanım yalnızca sicil kaydından; ayrıntılı belge okunamadı.</p>
         )}
       </div>
     </li>
@@ -126,7 +126,7 @@ export function TastesPanel({ loc, radiusKm = 25, initialCount = 6, className }:
       )}
 
       {checkedAt && (
-        <p className="pb-2 pt-1 text-[11px] text-muted">
+        <p className="pb-2 pt-1 text-xs text-muted">
           Kaynak:{" "}
           <a href="https://ci.turkpatent.gov.tr/" target="_blank" rel="noopener noreferrer" className="underline">
             TÜRKPATENT Coğrafi İşaretler Portalı
